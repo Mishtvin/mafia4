@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Conference - Galène</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="row mt-4">
+            <div class="col-12">
+                <h1 class="text-center mb-4">Video Conference</h1>
+            </div>
+        </div>
+
+        <!-- Login Section -->
+        <div id="login-section" class="row justify-content-center mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        Join a Conference
+                    </div>
+                    <div class="card-body">
+                        <form id="join-form">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Your Name</label>
+                                <input type="text" class="form-control" id="username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="roomname" class="form-label">Room Name</label>
+                                <input type="text" class="form-control" id="roomname" value="default" required>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="video-enabled" checked>
+                                <label class="form-check-label" for="video-enabled">Enable Video</label>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Join Conference</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conference Section -->
+        <div id="conference-section" class="row" style="display: none;">
+            <div class="col-12 mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 id="room-title">Room: <span id="current-room">default</span></h3>
+                    <div>
+                        <button id="leave-btn" class="btn btn-danger">
+                            <span data-feather="log-out"></span> Leave
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12">
+                <div id="video-container" class="video-grid"></div>
+            </div>
+            <div class="col-12 mt-3">
+                <div class="button-controls text-center">
+                    <button id="toggle-video" class="btn btn-primary">
+                        <span data-feather="video-off"></span> Toggle Video
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Modal -->
+        <div class="modal fade" id="error-modal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Error</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="error-message"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
