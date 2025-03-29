@@ -47,14 +47,47 @@ wss.on('connection', (ws) => {
     // Handle incoming messages
     ws.on('message', (message) => {
         try {
-            const data = JSON.parse(message);
-            console.log('Received message:', data);
+            // Try to parse the message as JSON
+            let data;
+            try {
+                data = JSON.parse(message);
+            } catch (parseError) {
+                console.error('Error parsing message:', parseError);
+                sendToClient(ws, {
+                    type: 'error',
+                    message: 'Invalid message format: Unable to parse JSON'
+                });
+                return;
+            }
+            
+            // Basic validation of message structure
+            if (!data || typeof data !== 'object') {
+                console.error('Invalid message format (not an object):', data);
+                sendToClient(ws, {
+                    type: 'error',
+                    message: 'Invalid message format: Message must be an object'
+                });
+                return;
+            }
+            
+            if (!data.type) {
+                console.error('Invalid message (missing type):', data);
+                sendToClient(ws, {
+                    type: 'error',
+                    message: 'Invalid message: Missing message type'
+                });
+                return;
+            }
+            
+            console.log(`Received message of type ${data.type} from client ${clientId}`);
+            
+            // Process the message
             handleMessage(clientId, data);
         } catch (error) {
-            console.error('Error parsing message:', error);
+            console.error('Error handling message:', error);
             sendToClient(ws, {
                 type: 'error',
-                message: 'Invalid message format'
+                message: 'Server error processing your request'
             });
         }
     });
@@ -177,11 +210,23 @@ function forwardIceCandidate(senderId, message) {
     const recipient = clients.get(recipientId);
     
     if (recipient && recipient.room === sender.room) {
+        console.log(`Forwarding ICE candidate from ${senderId} to ${recipientId}`);
+        
+        // Make a clean copy of the candidate to avoid potential corruption
+        const candidateObject = {
+            candidate: message.candidate.candidate,
+            sdpMid: message.candidate.sdpMid,
+            sdpMLineIndex: message.candidate.sdpMLineIndex,
+            usernameFragment: message.candidate.usernameFragment
+        };
+        
         sendToClient(recipient.ws, {
             type: 'ice',
             id: senderId,
-            candidate: message.candidate
+            candidate: candidateObject
         });
+    } else {
+        console.log(`Cannot forward ICE: recipient ${recipientId} not found or not in same room as sender`);
     }
 }
 
@@ -194,11 +239,21 @@ function forwardSDP(senderId, message) {
     const recipient = clients.get(recipientId);
     
     if (recipient && recipient.room === sender.room) {
+        console.log(`Forwarding ${message.sdp.type} from ${senderId} to ${recipientId}`);
+        
+        // Make sure we're only forwarding the required fields to avoid corruption
+        const sdpObject = {
+            type: message.sdp.type,
+            sdp: message.sdp.sdp
+        };
+        
         sendToClient(recipient.ws, {
             type: 'sdp',
             id: senderId,
-            sdp: message.sdp
+            sdp: sdpObject
         });
+    } else {
+        console.log(`Cannot forward SDP: recipient ${recipientId} not found or not in same room as sender`);
     }
 }
 

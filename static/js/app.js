@@ -179,49 +179,97 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initiate WebRTC connection with a peer
     function initiateConnection(peerId) {
-        const pc = new RTCPeerConnection({
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' }
-            ]
-        });
+        console.log(`Initiating connection to peer: ${peerId}`);
         
-        peerConnections[peerId] = pc;
-        
-        // Add local tracks to the connection
-        if (localStream) {
-            localStream.getTracks().forEach(track => {
-                pc.addTrack(track, localStream);
+        try {
+            // Configure RTCPeerConnection with STUN servers
+            const pc = new RTCPeerConnection({
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' }
+                ],
+                iceCandidatePoolSize: 10
             });
-        }
-        
-        // Handle ICE candidates
-        pc.onicecandidate = (event) => {
-            if (event.candidate) {
-                sendMessage({
-                    type: 'ice',
-                    id: peerId,
-                    candidate: event.candidate
+            
+            peerConnections[peerId] = pc;
+            
+            // Add local tracks to the connection
+            if (localStream) {
+                console.log(`Adding ${localStream.getTracks().length} local tracks to connection`);
+                localStream.getTracks().forEach(track => {
+                    pc.addTrack(track, localStream);
                 });
+            } else {
+                console.warn('No local stream available to add to peer connection');
             }
-        };
-        
-        // Handle connection state changes
-        pc.onconnectionstatechange = () => {
-            console.log(`Connection state with ${peerId}: ${pc.connectionState}`);
-            if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
-                removePeer(peerId);
-            }
-        };
-        
-        // Handle remote tracks
-        pc.ontrack = (event) => {
-            createRemoteVideoElement(peerId, event.streams[0]);
-        };
-        
-        // Create and send offer
-        pc.createOffer()
-            .then(offer => pc.setLocalDescription(offer))
+            
+            // Handle ICE candidates
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    console.log(`Generated ICE candidate for ${peerId}`);
+                    sendMessage({
+                        type: 'ice',
+                        id: peerId,
+                        candidate: event.candidate
+                    });
+                } else {
+                    console.log(`Finished generating ICE candidates for ${peerId}`);
+                }
+            };
+            
+            // Handle ICE gathering state changes
+            pc.onicegatheringstatechange = () => {
+                console.log(`ICE gathering state with ${peerId}: ${pc.iceGatheringState}`);
+            };
+            
+            // Handle ICE connection state changes
+            pc.oniceconnectionstatechange = () => {
+                console.log(`ICE connection state with ${peerId}: ${pc.iceConnectionState}`);
+                if (pc.iceConnectionState === 'failed') {
+                    console.log('Attempting to restart ICE for failed connection');
+                    pc.restartIce();
+                } else if (pc.iceConnectionState === 'disconnected') {
+                    console.log('ICE disconnected - waiting to see if it reconnects');
+                    // Wait to see if it reconnects on its own
+                }
+            };
+            
+            // Handle connection state changes
+            pc.onconnectionstatechange = () => {
+                console.log(`Connection state with ${peerId}: ${pc.connectionState}`);
+                if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+                    console.log(`Connection to ${peerId} failed or closed, removing peer`);
+                    removePeer(peerId);
+                } else if (pc.connectionState === 'connected') {
+                    console.log(`Successfully connected to ${peerId}`);
+                }
+            };
+            
+            // Handle remote tracks
+            pc.ontrack = (event) => {
+                console.log(`Received ${event.streams.length} track(s) from ${peerId}`);
+                if (event.streams && event.streams[0]) {
+                    createRemoteVideoElement(peerId, event.streams[0]);
+                } else {
+                    console.warn('Received track without associated stream');
+                }
+            };
+            
+            // Create and send offer
+            console.log(`Creating offer for ${peerId}`);
+            pc.createOffer({
+                offerToReceiveVideo: true,
+                offerToReceiveAudio: false,
+                voiceActivityDetection: false,
+                iceRestart: false
+            })
+            .then(offer => {
+                console.log(`Setting local description for ${peerId}`);
+                return pc.setLocalDescription(offer);
+            })
             .then(() => {
+                console.log(`Sending offer to ${peerId}`);
                 sendMessage({
                     type: 'sdp',
                     id: peerId,
@@ -232,76 +280,123 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error creating offer:', error);
                 showError('Failed to establish connection with a participant.');
             });
+        } catch (error) {
+            console.error('Exception in initiateConnection:', error);
+            showError('Error setting up video connection');
+        }
     }
 
     // Handle SDP offers and answers
     function handleSDP(message) {
         const peerId = message.id;
         
-        if (!peerConnections[peerId]) {
-            // Create new connection if it doesn't exist
-            const pc = new RTCPeerConnection({
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' }
-                ]
-            });
-            
-            peerConnections[peerId] = pc;
-            
-            // Add local tracks
-            if (localStream) {
-                localStream.getTracks().forEach(track => {
-                    pc.addTrack(track, localStream);
+        try {
+            if (!peerConnections[peerId]) {
+                console.log(`Creating new peer connection for ${peerId}`);
+                // Create new connection if it doesn't exist
+                const pc = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' }
+                    ]
                 });
-            }
-            
-            // Handle ICE candidates
-            pc.onicecandidate = (event) => {
-                if (event.candidate) {
-                    sendMessage({
-                        type: 'ice',
-                        id: peerId,
-                        candidate: event.candidate
+                
+                peerConnections[peerId] = pc;
+                
+                // Add local tracks
+                if (localStream) {
+                    localStream.getTracks().forEach(track => {
+                        pc.addTrack(track, localStream);
                     });
                 }
-            };
-            
-            // Handle connection state changes
-            pc.onconnectionstatechange = () => {
-                console.log(`Connection state with ${peerId}: ${pc.connectionState}`);
-                if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
-                    removePeer(peerId);
-                }
-            };
-            
-            // Handle remote tracks
-            pc.ontrack = (event) => {
-                createRemoteVideoElement(peerId, event.streams[0]);
-            };
-        }
-        
-        const pc = peerConnections[peerId];
-        const sdp = new RTCSessionDescription(message.sdp);
-        
-        pc.setRemoteDescription(sdp)
-            .then(() => {
-                if (sdp.type === 'offer') {
-                    // Create and send answer if we received an offer
-                    return pc.createAnswer()
-                        .then(answer => pc.setLocalDescription(answer))
-                        .then(() => {
-                            sendMessage({
-                                type: 'sdp',
-                                id: peerId,
-                                sdp: pc.localDescription
-                            });
+                
+                // Handle ICE candidates
+                pc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        sendMessage({
+                            type: 'ice',
+                            id: peerId,
+                            candidate: event.candidate
                         });
-                }
-            })
-            .catch(error => {
-                console.error('Error handling SDP:', error);
-                showError('Failed to establish connection with a participant.');
-            });
+                    }
+                };
+                
+                // Handle connection state changes
+                pc.onconnectionstatechange = () => {
+                    console.log(`Connection state with ${peerId}: ${pc.connectionState}`);
+                    if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+                        removePeer(peerId);
+                    }
+                };
+                
+                // Handle ice connection state changes
+                pc.oniceconnectionstatechange = () => {
+                    console.log(`ICE connection state with ${peerId}: ${pc.iceConnectionState}`);
+                    if (pc.iceConnectionState === 'failed') {
+                        console.log('Restarting ICE...');
+                        pc.restartIce();
+                    }
+                };
+                
+                // Handle remote tracks
+                pc.ontrack = (event) => {
+                    console.log(`Received remote track from ${peerId}`, event.streams);
+                    if (event.streams && event.streams[0]) {
+                        createRemoteVideoElement(peerId, event.streams[0]);
+                    }
+                };
+            }
+            
+            const pc = peerConnections[peerId];
+            
+            // Check if message.sdp is valid and has the required properties
+            if (!message.sdp || typeof message.sdp !== 'object') {
+                console.error('Invalid SDP received:', message.sdp);
+                return;
+            }
+            
+            // Make a safe copy of the SDP object
+            const sdpObj = {
+                type: message.sdp.type,
+                sdp: message.sdp.sdp
+            };
+            
+            if (!sdpObj.type || !sdpObj.sdp) {
+                console.error('SDP missing required fields:', sdpObj);
+                return;
+            }
+            
+            console.log(`Processing ${sdpObj.type} from ${peerId}`);
+            const sdp = new RTCSessionDescription(sdpObj);
+            
+            pc.setRemoteDescription(sdp)
+                .then(() => {
+                    console.log(`Remote description set for ${peerId}`);
+                    if (sdp.type === 'offer') {
+                        console.log(`Creating answer for ${peerId}`);
+                        // Create and send answer if we received an offer
+                        return pc.createAnswer()
+                            .then(answer => {
+                                console.log(`Setting local description for ${peerId}`);
+                                return pc.setLocalDescription(answer);
+                            })
+                            .then(() => {
+                                console.log(`Sending answer to ${peerId}`);
+                                sendMessage({
+                                    type: 'sdp',
+                                    id: peerId,
+                                    sdp: pc.localDescription
+                                });
+                            });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error handling SDP:', error);
+                    showError('Failed to establish connection with a participant.');
+                });
+        } catch (error) {
+            console.error('Exception in handleSDP:', error);
+            showError('An error occurred while processing the connection.');
+        }
     }
 
     // Create a remote video element for a peer
