@@ -44,13 +44,50 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set up local video stream
     async function setupLocalStream() {
         try {
-            localStream = await navigator.mediaDevices.getUserMedia({
-                video: videoEnabled ? { 
+            console.log('Setting up local video stream, video enabled:', videoEnabled);
+            
+            // Check browser support
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('Your browser does not support camera access. Please try using Chrome or Firefox.');
+            }
+            
+            // Try to get camera with different fallback options
+            let stream = null;
+            const constraints = {
+                video: videoEnabled ? {
                     width: { ideal: 1280 },
-                    height: { ideal: 720 }
+                    height: { ideal: 720 },
+                    facingMode: 'user'
                 } : false,
                 audio: false // No audio per requirements
-            });
+            };
+            
+            try {
+                console.log('Requesting media with constraints:', constraints);
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                console.log('Successfully obtained media stream with tracks:', 
+                    stream.getTracks().map(t => `${t.kind}:${t.label}:${t.enabled}`));
+            } catch (highQualityError) {
+                console.warn('Failed with high quality settings, trying basic video:', highQualityError);
+                
+                // Fallback to basic video
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: videoEnabled,
+                        audio: false
+                    });
+                    console.log('Successfully obtained basic stream');
+                } catch (basicError) {
+                    console.error('Failed to access camera with basic settings:', basicError);
+                    throw new Error('Could not access your camera. Please check your camera permissions and try again.');
+                }
+            }
+            
+            if (!stream) {
+                throw new Error('Failed to get media stream even though no error was thrown.');
+            }
+            
+            localStream = stream;
             
             // Create local video element
             localVideo = document.createElement('div');
@@ -61,14 +98,39 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             
             const videoElement = localVideo.querySelector('video');
-            videoElement.srcObject = localStream;
+            
+            // Log video events for debugging
+            videoElement.addEventListener('loadedmetadata', () => {
+                console.log('Local video metadata loaded', 
+                    videoElement.videoWidth, 'x', videoElement.videoHeight);
+            });
+            
+            videoElement.addEventListener('playing', () => {
+                console.log('Local video started playing');
+            });
+            
+            videoElement.addEventListener('error', (e) => {
+                console.error('Local video error event:', e);
+            });
+            
+            // Set the stream as source
+            videoElement.srcObject = stream;
             
             // Add local video to the grid
             videoContainer.appendChild(localVideo);
             
-            return localStream;
+            // Ensure video plays
+            try {
+                await videoElement.play();
+                console.log('Local video playing successfully');
+            } catch (playError) {
+                console.warn('Warning playing local video:', playError);
+                // We can continue even if playing fails as the autoplay attribute should handle it
+            }
+            
+            return stream;
         } catch (error) {
-            console.error('Error accessing media devices:', error);
+            console.error('Error in setupLocalStream:', error);
             throw error;
         }
     }
@@ -296,8 +358,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Create new connection if it doesn't exist
                 const pc = new RTCPeerConnection({
                     iceServers: [
-                        { urls: 'stun:stun.l.google.com:19302' }
-                    ]
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' }
+                    ],
+                    iceCandidatePoolSize: 10
                 });
                 
                 peerConnections[peerId] = pc;
@@ -401,29 +466,69 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Create a remote video element for a peer
     function createRemoteVideoElement(peerId, stream) {
-        // Remove existing element if it exists
-        const existingElement = document.getElementById(`remote-${peerId}`);
-        if (existingElement) {
-            existingElement.remove();
+        console.log(`Creating video element for peer ${peerId} with stream:`, stream);
+        
+        try {
+            // Remove existing element if it exists
+            const existingElement = document.getElementById(`remote-${peerId}`);
+            if (existingElement) {
+                console.log(`Removing existing video element for peer ${peerId}`);
+                existingElement.remove();
+            }
+            
+            // Verify the stream has video tracks
+            if (!stream || stream.getVideoTracks().length === 0) {
+                console.warn(`Stream from peer ${peerId} has no video tracks`);
+            }
+            
+            // Create new video container
+            const videoItem = document.createElement('div');
+            videoItem.className = 'video-item';
+            videoItem.id = `remote-${peerId}`;
+            videoItem.innerHTML = `
+                <video autoplay playsinline></video>
+                <div class="video-label">Participant</div>
+            `;
+            
+            const videoElement = videoItem.querySelector('video');
+            
+            // Make sure we handle the loadedmetadata event before playing
+            videoElement.addEventListener('loadedmetadata', () => {
+                console.log(`Video metadata loaded for peer ${peerId}`);
+            });
+            
+            // Add error handling for video element
+            videoElement.addEventListener('error', (e) => {
+                console.error(`Video error for peer ${peerId}:`, e);
+            });
+            
+            // Set srcObject for the video element
+            videoElement.srcObject = stream;
+            
+            // Add to video container
+            videoContainer.appendChild(videoItem);
+            
+            // Play the video with proper error handling
+            const playPromise = videoElement.play();
+            
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => {
+                        console.log(`Successfully playing video from peer ${peerId}`);
+                    })
+                    .catch(error => {
+                        console.error(`Error playing video from peer ${peerId}:`, error);
+                        // Try to play again after a delay
+                        setTimeout(() => {
+                            videoElement.play()
+                                .then(() => console.log(`Retry successful for peer ${peerId}`))
+                                .catch(e => console.error(`Retry failed for peer ${peerId}:`, e));
+                        }, 1000);
+                    });
+            }
+        } catch (error) {
+            console.error(`Exception in createRemoteVideoElement for peer ${peerId}:`, error);
         }
-        
-        // Create new video container
-        const videoItem = document.createElement('div');
-        videoItem.className = 'video-item';
-        videoItem.id = `remote-${peerId}`;
-        videoItem.innerHTML = `
-            <video autoplay playsinline></video>
-            <div class="video-label">Participant</div>
-        `;
-        
-        const videoElement = videoItem.querySelector('video');
-        videoElement.srcObject = stream;
-        
-        // Add to video container
-        videoContainer.appendChild(videoItem);
-        
-        // Play the video (some browsers require this)
-        videoElement.play().catch(error => console.error('Error playing video:', error));
     }
 
     // Remove a peer and clean up resources
