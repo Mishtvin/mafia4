@@ -25,8 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const renamePeerSection = document.getElementById('rename-peer-section');
     const reviveAllBtn = document.getElementById('revive-all-btn');
     const balaganBtn = document.getElementById('balagan-btn');
+
     const timerContainer = document.getElementById('timer-container');
     const timerDisplay = document.getElementById('timer-display');
+    let currentTimerInterval = null; // Для хранения текущего активного интервала таймера
     const renameModal = new bootstrap.Modal(document.getElementById('rename-modal'));
     const errorModal = new bootstrap.Modal(document.getElementById('error-modal'));
     const errorMessage = document.getElementById('error-message');
@@ -2124,6 +2126,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const balaganAnnouncement = document.getElementById('balagan-announcement');
         const stopBalaganAnnouncement = document.getElementById('stop-balagan-announcement');
         
+        // Если есть активный таймер, останавливаем его
+        if (currentTimerInterval) {
+            clearInterval(currentTimerInterval);
+            currentTimerInterval = null;
+            // Скрываем таймер
+            timerContainer.style.display = 'none';
+        }
+        
         // Шаг 1: Показываем анимацию с текстом "Балаган" в центре
         balaganAnnouncement.style.display = 'block';
         balaganAnnouncement.style.opacity = '0';
@@ -2148,14 +2158,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const endTime = startTime + (durationInSeconds * 1000);
                 
                 // Обновляем таймер каждую секунду
-                const timerInterval = setInterval(() => {
+                currentTimerInterval = setInterval(() => {
                     // Вычисляем оставшееся время
                     const currentTime = Date.now();
                     const remainingTime = endTime - currentTime;
                     
                     if (remainingTime <= 0) {
                         // Таймер закончился
-                        clearInterval(timerInterval);
+                        clearInterval(currentTimerInterval);
+                        currentTimerInterval = null;
                         timerContainer.style.display = 'none';
                         
                         // Показываем уведомление "Чічічі Стоп Балаган"
