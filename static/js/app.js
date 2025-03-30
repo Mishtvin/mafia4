@@ -2195,23 +2195,31 @@ document.addEventListener('DOMContentLoaded', () => {
     // Show error message
     // Показать диалог для изменения порядкового номера
     function showOrderIndexChangeDialog() {
-        const currentPeer = peers.get(currentSettingsPeerId);
+        // Если клик был на номере локального видео (клик на меню обрабатывается отдельно)
+        // currentSettingsPeerId будет null для клика на номер собственного видео
+        const peerId = currentSettingsPeerId || serverId;
+        const currentPeer = peers.get(peerId);
         
-        // Проверка, что peer существует
-        if (!currentPeer) {
+        // Проверка, что peer существует или это локальный пользователь
+        if (!currentPeer && peerId !== serverId) {
             console.log('Invalid peer');
             return;
         }
         
-        // Проверка, что это игрок, а не ведущий
-        if (currentPeer.role === 'host') {
+        // Получаем информацию о пире или локальном пользователе
+        const isLocalUser = (peerId === serverId);
+        const peerRole = isLocalUser ? userRole : (currentPeer ? currentPeer.role : null);
+        const peerOrderIndex = isLocalUser ? userOrderIndex : (currentPeer ? currentPeer.orderIndex : 1);
+        
+        // Проверка, что это игрок, а не ведущий (ведущему нельзя менять номер)
+        if (peerRole === 'host') {
             console.log('Cannot change order index for host');
             return;
         }
         
         // Для ведущего - можно менять номера других игроков
         // Для игрока - можно менять только свой номер
-        if (currentSettingsPeerId !== serverId && userRole !== 'host') {
+        if (!isLocalUser && userRole !== 'host') {
             console.log('Only host can change other players order index');
             showError('Только ведущий может изменять номера других игроков');
             return;
@@ -2224,7 +2232,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="modal-content">
                 <h3>Изменить порядковый номер</h3>
                 <p>Введите новый порядковый номер:</p>
-                <input type="number" min="1" id="new-order-index" value="${currentPeer.orderIndex || 1}" class="form-control">
+                <input type="number" min="1" id="new-order-index" value="${peerOrderIndex || 1}" class="form-control">
                 <div class="modal-buttons">
                     <button id="cancel-order-index" class="btn btn-secondary">Отмена</button>
                     <button id="confirm-order-index" class="btn btn-primary">Применить</button>

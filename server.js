@@ -223,11 +223,21 @@ function handleRename(clientId, message) {
     });
     
     // Подтвердить смену имени
-    sendToClient(client.ws, {
-        type: 'rename_confirmed',
-        id: targetId,
-        username: newUsername
-    });
+    if (targetId === clientId) {
+        // Если пользователь меняет своё имя
+        sendToClient(client.ws, {
+            type: 'rename_confirmed',
+            id: targetId,
+            username: newUsername
+        });
+    } else {
+        // Если ведущий меняет имя другого участника, отправляем подтверждение и этому участнику
+        sendToClient(targetClient.ws, {
+            type: 'rename_confirmed',
+            id: targetId,
+            username: newUsername
+        });
+    }
 }
 
 // Обработка переименования другого пира (локально для данного клиента)
@@ -523,11 +533,22 @@ function handleChangeOrderIndex(clientId, message) {
     });
     
     // Подтверждаем изменение номера
-    sendToClient(client.ws, {
-        type: 'order_index_changed_confirmed',
-        id: targetId,
-        orderIndex: newOrderIndex
-    });
+    if (targetId === clientId) {
+        // Если игрок меняет свой номер
+        sendToClient(client.ws, {
+            type: 'order_index_changed_confirmed',
+            id: targetId,
+            orderIndex: newOrderIndex
+        });
+    } else {
+        // Если ведущий меняет номер другого игрока, отправляем подтверждение и этому игроку тоже
+        const targetWs = targetClient.ws;
+        sendToClient(targetWs, {
+            type: 'order_index_changed_confirmed',
+            id: targetId,
+            orderIndex: newOrderIndex
+        });
+    }
 }
 
 // Generate unique ID
