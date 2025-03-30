@@ -1522,41 +1522,59 @@ document.addEventListener('DOMContentLoaded', () => {
         const videoItems = Array.from(videoContainer.querySelectorAll('.video-item'))
             .filter(item => item !== localVideo);
             
-        // Сортируем их по порядковым номерам
-        videoItems.sort((a, b) => {
-            const peerIdA = a.dataset.peerId;
-            const peerIdB = b.dataset.peerId;
+        // Сначала создаем полный список видео, включая локальное
+        let allVideos = [];
+        
+        // Добавляем локальное видео если оно есть
+        if (localVideo) {
+            allVideos.push(localVideo);
+        }
+        
+        // Добавляем все удаленные видео
+        allVideos = [...allVideos, ...videoItems];
+        
+        // Сортируем все видео в одном списке
+        allVideos.sort((a, b) => {
+            // Для локального видео используем userOrderIndex, для удаленных - peer.orderIndex
+            let isLocalA = a === localVideo;
+            let isLocalB = b === localVideo;
             
-            const peerA = peers.get(peerIdA);
-            const peerB = peers.get(peerIdB);
+            // Получаем ID пиров для удаленных видео
+            const peerIdA = !isLocalA ? a.dataset.peerId : null;
+            const peerIdB = !isLocalB ? b.dataset.peerId : null;
             
-            // Ведущий (host) всегда идет первым после локального видео (в самом начале)
-            if (peerA && (peerA.role === 'host' || peerA.isHost) && 
-                !(peerB && (peerB.role === 'host' || peerB.isHost))) {
-                return -1;
+            // Получаем объекты пиров для удаленных видео
+            const peerA = !isLocalA ? peers.get(peerIdA) : null;
+            const peerB = !isLocalB ? peers.get(peerIdB) : null;
+            
+            // Проверка на ведущего - они всегда в конце
+            // Для локального видео проверяем userRole
+            const isHostA = isLocalA ? userRole === 'host' : (peerA && (peerA.role === 'host' || peerA.isHost));
+            const isHostB = isLocalB ? userRole === 'host' : (peerB && (peerB.role === 'host' || peerB.isHost));
+            
+            // Ведущие всегда идут в конце
+            if (isHostA && !isHostB) {
+                return 1; // A - ведущий, должен быть в конце
             }
             
-            if (peerB && (peerB.role === 'host' || peerB.isHost) && 
-                !(peerA && (peerA.role === 'host' || peerA.isHost))) {
-                return 1;
+            if (isHostB && !isHostA) {
+                return -1; // B - ведущий, должен быть в конце
             }
             
             // Если оба ведущие или оба игроки - сортируем по порядковому номеру
-            const orderA = peerA ? peerA.orderIndex || 0 : 0;
-            const orderB = peerB ? peerB.orderIndex || 0 : 0;
+            const orderA = isLocalA ? userOrderIndex : (peerA ? peerA.orderIndex || 0 : 0);
+            const orderB = isLocalB ? userOrderIndex : (peerB ? peerB.orderIndex || 0 : 0);
             
             // Сортировка по возрастанию номера
             return orderA - orderB;
         });
         
-        // Переносим локальное видео в начало
-        if (localVideo) {
-            videoContainer.insertBefore(localVideo, videoContainer.firstChild);
-        }
-        
-        // Переупорядочиваем удаленные видео
-        videoItems.forEach(item => {
-            videoContainer.appendChild(item);
+        // Очищаем контейнер и добавляем все видео в новом порядке
+        videoContainer.innerHTML = '';
+        allVideos.forEach(item => {
+            if (item) { // проверка на null
+                videoContainer.appendChild(item);
+            }
         });
         
         console.log('Video elements sorted');
