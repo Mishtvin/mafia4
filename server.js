@@ -468,25 +468,8 @@ function handleChangeOrderIndex(clientId, message) {
     const room = rooms.get(client.room);
     if (!room) return;
     
-    // Проверяем, не занят ли этот номер другим игроком
-    let isOrderIndexTaken = false;
-    room.participants.forEach(id => {
-        if (id !== clientId) {
-            const participant = clients.get(id);
-            if (participant && participant.role === 'player' && participant.orderIndex === newOrderIndex) {
-                isOrderIndexTaken = true;
-            }
-        }
-    });
-    
-    // Если номер уже занят, генерируем ошибку
-    if (isOrderIndexTaken) {
-        sendToClient(client.ws, {
-            type: 'error',
-            message: 'Этот номер уже занят другим игроком'
-        });
-        return;
-    }
+    // Убрана проверка на занятость номера, чтобы разрешить дублирование номеров
+    // Теперь несколько игроков могут иметь одинаковые порядковые номера
     
     // Обновляем порядковый номер клиента
     const oldOrderIndex = client.orderIndex;
