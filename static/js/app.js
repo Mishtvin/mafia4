@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // DOM elements
     const joinForm = document.getElementById('join-form');
     const usernameInput = document.getElementById('username');
-    const roomnameInput = document.getElementById('roomname');
     const videoEnabledCheckbox = document.getElementById('video-enabled');
     const videoQualitySelect = document.getElementById('video-quality');
     const customVideoSettings = document.getElementById('custom-video-settings');
@@ -415,13 +414,13 @@ document.addEventListener('DOMContentLoaded', () => {
         joinForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            if (!usernameInput || !roomnameInput || !videoEnabledCheckbox || !videoQualitySelect) {
+            if (!usernameInput || !videoEnabledCheckbox || !videoQualitySelect) {
                 showError('Some form elements are missing. Please refresh the page and try again.');
                 return;
             }
             
             username = usernameInput.value.trim();
-            roomname = roomnameInput.value.trim() || 'default';
+            roomname = 'default'; // Всегда используем комнату default
             videoEnabled = videoEnabledCheckbox.checked;
             
             // Получим выбранную камеру
