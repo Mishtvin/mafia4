@@ -180,6 +180,11 @@ function handleMessage(clientId, message) {
             handleKillPeer(clientId, message);
             break;
             
+        case 'revive_all':
+            // Ведущий снимает статус "вбито" со всех участников
+            handleReviveAll(clientId, message);
+            break;
+            
         case 'change_order_index':
             // Изменение порядкового номера игрока
             handleChangeOrderIndex(clientId, message);
@@ -332,6 +337,73 @@ function handleKillPeer(clientId, message) {
         targetId: targetId,
         killed: targetClient.killed
     });
+}
+
+// Ведущий снимает статус "вбито" со всех участников
+function handleReviveAll(clientId, message) {
+    const client = clients.get(clientId);
+    if (!client || !client.room) return;
+    
+    // Проверяем, что инициатор - ведущий
+    if (client.role !== 'host') {
+        sendToClient(client.ws, {
+            type: 'error',
+            message: 'Только ведущий может снять статус "вбито" со всех участников'
+        });
+        return;
+    }
+    
+    const room = rooms.get(client.room);
+    if (!room) return;
+    
+    console.log(`Host ${clientId} is reviving all participants in room ${client.room}`);
+    
+    // Список ID клиентов, у которых изменился статус
+    const changedClients = [];
+    
+    // Снимаем статус "вбито" со всех участников в комнате
+    room.participants.forEach(participantId => {
+        const participant = clients.get(participantId);
+        if (participant && participant.killed) {
+            participant.killed = false;
+            changedClients.push(participantId);
+            
+            // Уведомляем каждого участника об изменении его статуса
+            sendToClient(participant.ws, {
+                type: 'killed_confirmed',
+                id: participantId,
+                killed: false
+            });
+        }
+    });
+    
+    if (changedClients.length > 0) {
+        // Уведомляем всех участников об изменениях
+        changedClients.forEach(id => {
+            broadcastToRoom(client.room, {
+                type: 'user_killed',
+                id: id,
+                killed: false
+            });
+        });
+        
+        // Подтверждаем ведущему успешное выполнение команды
+        sendToClient(client.ws, {
+            type: 'revive_all_confirmed',
+            count: changedClients.length
+        });
+        
+        console.log(`Host ${clientId} revived ${changedClients.length} participants`);
+    } else {
+        // Если никто не был "убит", сообщаем ведущему
+        sendToClient(client.ws, {
+            type: 'revive_all_confirmed',
+            count: 0,
+            message: 'Нет участников со статусом "вбито"'
+        });
+        
+        console.log(`Host ${clientId} attempted to revive all, but no participants were killed`);
+    }
 }
 
 // Handle joining a room

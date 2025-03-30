@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const peerSelect = document.getElementById('peer-select');
     const peerNewNameInput = document.getElementById('peer-new-name');
     const renamePeerSection = document.getElementById('rename-peer-section');
+    const reviveAllBtn = document.getElementById('revive-all-btn');
     const renameModal = new bootstrap.Modal(document.getElementById('rename-modal'));
     const errorModal = new bootstrap.Modal(document.getElementById('error-modal'));
     const errorMessage = document.getElementById('error-message');
@@ -680,6 +681,13 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Received message:', message);
         
         switch (message.type) {
+            case 'revive_all_confirmed':
+                // Подтверждение снятия статуса "вбито" со всех
+                console.log(`Host revived ${message.count} participants`);
+                // Никаких дополнительных действий не требуется, так как отдельные сообщения
+                // user_killed будут обработаны для каждого пира
+                break;
+                
             case 'order_index_changed':
                 // Порядковый номер пира изменен
                 const peerWithChangedOrder = peers.get(message.id);
@@ -2064,6 +2072,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebarLeaveBtn = document.getElementById('sidebar-leave-btn');
     if (sidebarLeaveBtn) {
         sidebarLeaveBtn.addEventListener('click', disconnect);
+    }
+    
+    // Обработчик для кнопки "Оживити всіх"
+    if (reviveAllBtn) {
+        reviveAllBtn.addEventListener('click', () => {
+            if (userRole !== 'host') {
+                showError('Только ведущий может снять статус "вбито" со всех участников');
+                return;
+            }
+            
+            console.log('Host is reviving all participants');
+            
+            // Отправляем запрос на сервер для снятия статуса "вбито" со всех участников
+            sendMessage({
+                type: 'revive_all'
+            });
+        });
     }
     
     // Обработчик для кнопки случайного присвоения номеров игрокам
