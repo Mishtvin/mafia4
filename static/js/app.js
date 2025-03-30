@@ -2107,30 +2107,15 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             balaganAnnouncement.style.animation = 'balaganToTimer 0.8s forwards';
             
-            // Шаг 3: Как только анимация завершена, показываем таймер под анимацией
+            // Шаг 3: Как только анимация завершена, показываем таймер и сразу скрываем надпись
             setTimeout(() => {
                 // Показываем таймер
                 timerContainer.style.display = 'flex';
+                timerDisplay.style.opacity = '1';
                 
-                // Таймер должен быть скрыт под анимацией
-                timerDisplay.style.opacity = '0';
-                
-                // Через 1 секунду скрываем анимацию и показываем таймер
-                setTimeout(() => {
-                    // Плавное исчезновение анимации
-                    balaganAnnouncement.style.transition = 'opacity 0.5s';
-                    balaganAnnouncement.style.opacity = '0';
-                    
-                    // Плавное появление таймера
-                    timerDisplay.style.transition = 'opacity 0.5s';
-                    timerDisplay.style.opacity = '1';
-                    
-                    // Полностью убираем анимацию после завершения перехода
-                    setTimeout(() => {
-                        balaganAnnouncement.style.display = 'none';
-                        balaganAnnouncement.style.animation = '';
-                    }, 500);
-                }, 1000); // Держим "Балаган" поверх таймера 1 секунду
+                // Сразу скрываем анимацию "Балаган"
+                balaganAnnouncement.style.display = 'none';
+                balaganAnnouncement.style.animation = '';
                 
                 // Запускаем отсчет
                 const startTime = Date.now();
