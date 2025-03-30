@@ -253,14 +253,14 @@ function handleRenamePeer(clientId, message) {
     });
 }
 
-// Обработка изменения статуса "отключен/убит"
+// Обработка изменения статуса "вбито"
 function handleKilledStatus(clientId, message) {
     const client = clients.get(clientId);
     if (!client || !client.room) return;
     
     // Обновить статус пользователя
     client.killed = !!message.killed;
-    console.log(`Client ${clientId} ${client.killed ? 'killed' : 'revived'}`);
+    console.log(`Client ${clientId} ${client.killed ? 'killed (ВБИТО)' : 'revived'}`);
     
     // Сообщить всем в комнате об изменении статуса
     broadcastToRoom(client.room, {

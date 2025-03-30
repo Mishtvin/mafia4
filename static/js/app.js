@@ -570,6 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
             localVideo.innerHTML = `
                 <video autoplay muted playsinline></video>
                 <div class="video-label" id="local-username-label">You (${username})${roleText}</div>
+                <button class="kill-button" id="kill-toggle-btn" title="Вбито">💀</button>
             `;
             
             const videoElement = localVideo.querySelector('video');
@@ -593,6 +594,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Add local video to the grid - всегда вставляем в начало
             videoContainer.insertBefore(localVideo, videoContainer.firstChild);
+            
+            // Добавляем обработчик события для кнопки "вбито"
+            const killButton = localVideo.querySelector('.kill-button');
+            if (killButton) {
+                killButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    toggleKilledStatus();
+                });
+            }
             
             // Ensure video plays
             try {
@@ -943,15 +953,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // Обновить отображение локального статуса "убит"
     function updateLocalKilledStatus() {
         if (localVideo) {
+            // Добавляем маркер "ВБИТО" в левый верхний угол для локального видео,
+            // но оставляем видео видимым для самого пользователя
+            let killMark = localVideo.querySelector('.kill-mark');
+            
             if (isKilled) {
                 localVideo.classList.add('killed');
+                localVideo.classList.add('local-video'); // Специальный класс для локального видео
+                
+                // Добавляем маркер, если его еще нет
+                if (!killMark) {
+                    killMark = document.createElement('div');
+                    killMark.className = 'kill-mark';
+                    killMark.textContent = 'ВБИТО';
+                    localVideo.appendChild(killMark);
+                }
             } else {
                 localVideo.classList.remove('killed');
+                
+                // Удаляем маркер, если он есть
+                if (killMark) {
+                    killMark.remove();
+                }
             }
         }
     }
     
-    // Обновить отображение статуса "убит" для удаленного пира
+    // Обновить отображение статуса "вбито" для удаленного пира
     function updatePeerKilledStatus(peerId) {
         const videoElement = document.getElementById(`remote-${peerId}`);
         const peer = peers.get(peerId);
@@ -963,6 +991,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 videoElement.classList.remove('killed');
             }
         }
+    }
+    
+    // Функция для переключения статуса "вбито"
+    function toggleKilledStatus() {
+        // Инвертируем текущий статус
+        isKilled = !isKilled;
+        
+        // Отправляем новый статус на сервер
+        sendMessage({
+            type: 'killed',
+            killed: isKilled
+        });
+        
+        // Обновляем отображение локально (хотя это также сделает confirmKilled)
+        updateLocalKilledStatus();
     }
     
     // Обновить отображение имени для локального видео
