@@ -655,6 +655,24 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Received message:', message);
         
         switch (message.type) {
+            case 'order_index_changed':
+                // Порядковый номер пира изменен
+                const peerWithChangedOrder = peers.get(message.id);
+                if (peerWithChangedOrder) {
+                    peerWithChangedOrder.orderIndex = message.orderIndex;
+                    updatePeerLabel(message.id);
+                    sortVideoElements();
+                }
+                break;
+                
+            case 'order_index_changed_confirmed':
+                // Подтверждение изменения нашего порядкового номера
+                if (message.id === serverId) {
+                    userOrderIndex = message.orderIndex;
+                    updateLocalLabel();
+                    sortVideoElements();
+                }
+                break;
             case 'connection':
                 // Successfully connected to server
                 serverId = message.id;
@@ -954,11 +972,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (userRole === 'host') {
                     displayName = `You (${username}) (ведущий)`;
                     console.log(`DEBUG: Setting label for HOST: ${displayName}`);
+                    
+                    // Для ведущего убираем возможность клика на номер
+                    label.classList.remove('clickable-order-index');
                 } else {
-                    // Для игрока добавляем порядковый номер перед именем
+                    // Для игрока добавляем порядковый номер перед именем и делаем его кликабельным
                     const orderPrefix = userOrderIndex ? `${userOrderIndex}. ` : '';
                     displayName = `${orderPrefix}You (${username})`;
                     console.log(`DEBUG: Setting label for PLAYER: ${displayName}`);
+                    
+                    // Для игрока добавляем класс для клика на номер
+                    label.classList.add('clickable-order-index');
+                    
+                    // Добавляем обработчик клика для изменения номера
+                    if (!label.hasAttribute('order-index-click-handler')) {
+                        label.setAttribute('order-index-click-handler', 'true');
+                        label.addEventListener('click', (e) => {
+                            // Проверяем, что клик был на номере (в начале строки до первого пробела)
+                            const rect = label.getBoundingClientRect();
+                            const clickX = e.clientX - rect.left;
+                            
+                            // Примерная ширина цифры + точки (можно подстроить)
+                            const digitWidth = 15; // пикселей на символ
+                            const orderIndexWidth = orderPrefix.length * digitWidth;
+                            
+                            if (clickX <= orderIndexWidth) {
+                                // Клик на порядковом номере
+                                showOrderIndexChangeDialog();
+                                e.stopPropagation();
+                            }
+                        });
+                    }
                 }
                 
                 label.textContent = displayName;
@@ -2140,6 +2184,61 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Show error message
+    // Показать диалог для изменения порядкового номера
+    function showOrderIndexChangeDialog() {
+        if (userRole !== 'player') return; // Только для игроков
+        
+        // Создаем модальное окно
+        const modal = document.createElement('div');
+        modal.className = 'modal order-index-modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h3>Изменить порядковый номер</h3>
+                <p>Введите новый порядковый номер:</p>
+                <input type="number" min="1" id="new-order-index" value="${userOrderIndex}" class="form-control">
+                <div class="modal-buttons">
+                    <button id="cancel-order-index" class="btn btn-secondary">Отмена</button>
+                    <button id="confirm-order-index" class="btn btn-primary">Применить</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Выделяем значение в поле ввода
+        const input = document.getElementById('new-order-index');
+        input.select();
+        
+        // Обработчики кнопок
+        document.getElementById('cancel-order-index').addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+        
+        document.getElementById('confirm-order-index').addEventListener('click', () => {
+            const newOrderIndex = parseInt(input.value, 10);
+            if (isNaN(newOrderIndex) || newOrderIndex < 1) {
+                showError('Номер должен быть положительным числом');
+                return;
+            }
+            
+            // Отправляем запрос на сервер
+            sendMessage({
+                type: 'change_order_index',
+                orderIndex: newOrderIndex
+            });
+            
+            // Закрываем модальное окно
+            document.body.removeChild(modal);
+        });
+        
+        // Обработка нажатия Enter
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('confirm-order-index').click();
+            }
+        });
+    }
+
     function showError(message) {
         errorMessage.textContent = message;
         errorModal.show();

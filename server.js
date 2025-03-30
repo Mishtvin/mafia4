@@ -175,6 +175,11 @@ function handleMessage(clientId, message) {
             handleKilledStatus(clientId, message);
             break;
             
+        case 'change_order_index':
+            // Изменение порядкового номера игрока
+            handleChangeOrderIndex(clientId, message);
+            break;
+            
         default:
             sendToClient(client.ws, {
                 type: 'error',
@@ -441,6 +446,65 @@ function broadcastToRoom(roomName, message, exceptClientId = null) {
                 sendToClient(participant.ws, message);
             }
         }
+    });
+}
+
+// Обработка изменения порядкового номера игрока
+function handleChangeOrderIndex(clientId, message) {
+    const client = clients.get(clientId);
+    if (!client || !client.room || client.role !== 'player') return;
+    
+    // Проверяем, что новый порядковый номер является числом
+    const newOrderIndex = parseInt(message.orderIndex, 10);
+    if (isNaN(newOrderIndex) || newOrderIndex <= 0) {
+        sendToClient(client.ws, {
+            type: 'error',
+            message: 'Invalid order index'
+        });
+        return;
+    }
+    
+    // Получаем текущую комнату
+    const room = rooms.get(client.room);
+    if (!room) return;
+    
+    // Проверяем, не занят ли этот номер другим игроком
+    let isOrderIndexTaken = false;
+    room.participants.forEach(id => {
+        if (id !== clientId) {
+            const participant = clients.get(id);
+            if (participant && participant.role === 'player' && participant.orderIndex === newOrderIndex) {
+                isOrderIndexTaken = true;
+            }
+        }
+    });
+    
+    // Если номер уже занят, генерируем ошибку
+    if (isOrderIndexTaken) {
+        sendToClient(client.ws, {
+            type: 'error',
+            message: 'Этот номер уже занят другим игроком'
+        });
+        return;
+    }
+    
+    // Обновляем порядковый номер клиента
+    const oldOrderIndex = client.orderIndex;
+    client.orderIndex = newOrderIndex;
+    console.log(`Client ${clientId} changed order index from ${oldOrderIndex} to ${newOrderIndex}`);
+    
+    // Уведомляем всех участников комнаты об изменении номера
+    broadcastToRoom(client.room, {
+        type: 'order_index_changed',
+        id: clientId,
+        orderIndex: newOrderIndex
+    });
+    
+    // Подтверждаем изменение номера клиенту
+    sendToClient(client.ws, {
+        type: 'order_index_changed_confirmed',
+        id: clientId,
+        orderIndex: newOrderIndex
     });
 }
 
