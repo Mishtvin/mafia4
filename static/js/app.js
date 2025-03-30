@@ -567,10 +567,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const roleText = userRole === 'host' ? ` (ведущий)` : '';
             console.log(`DEBUG: Creating local video with role ${userRole}, roleText="${roleText}"`);
             
+            // Добавляем кнопку убито только если это не ведущий
+            const killButtonHtml = userRole === 'host' ? '' : '<button class="kill-button" id="kill-toggle-btn" title="Вбито">💀</button>';
+            
             localVideo.innerHTML = `
                 <video autoplay muted playsinline></video>
                 <div class="video-label" id="local-username-label">You (${username})${roleText}</div>
-                <button class="kill-button" id="kill-toggle-btn" title="Вбито">💀</button>
+                ${killButtonHtml}
             `;
             
             const videoElement = localVideo.querySelector('video');
@@ -909,6 +912,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 break;
                 
+            case 'kill_peer_confirmed':
+                // Подтверждение, что ведущий изменил статус другого пира
+                console.log(`Received confirmation for kill_peer: ${message.targetId} status: ${message.killed}`);
+                break;
+                
             case 'host_left':
                 // Когда ведущий покидает комнату
                 showError(message.message || "Ведущий покинул комнату");
@@ -985,8 +993,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (videoElement && peer) {
             if (peer.killed) {
                 videoElement.classList.add('killed');
+                
+                // Добавить маркер "ВБИТО", если его еще нет
+                let killMark = videoElement.querySelector('.kill-mark');
+                if (!killMark) {
+                    killMark = document.createElement('div');
+                    killMark.className = 'kill-mark';
+                    killMark.textContent = 'ВБИТО';
+                    videoElement.appendChild(killMark);
+                }
             } else {
                 videoElement.classList.remove('killed');
+                
+                // Удалить маркер "ВБИТО", если он есть
+                const killMark = videoElement.querySelector('.kill-mark');
+                if (killMark) {
+                    killMark.remove();
+                }
             }
         }
     }
@@ -1580,9 +1603,20 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Не добавляем класс host, так как роль отображается в имени
             
+            // Добавляем кнопку убито только для игроков (не для ведущих)
+            // и только если текущий пользователь - ведущий
+            const killButtonHtml = !isHost && userRole === 'host' ? 
+                `<button class="kill-button remote-kill-button" data-peer-id="${peerId}" title="Вбито">💀</button>` : '';
+                
+            // Добавляем маркер ВБИТО, если пир имеет статус убитого
+            const killMarkHtml = peer && peer.killed ? 
+                `<div class="kill-mark">ВБИТО</div>` : '';
+            
             videoItem.innerHTML = `
                 <video autoplay playsinline></video>
                 <div class="video-label">${displayName}</div>
+                ${killButtonHtml}
+                ${killMarkHtml}
             `;
             
             const videoElement = videoItem.querySelector('video');
@@ -1939,6 +1973,35 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    // Добавляем обработчик для кнопок "Вбито" у удаленных участников
+    document.addEventListener('click', (e) => {
+        if (e.target && e.target.classList.contains('remote-kill-button')) {
+            e.preventDefault();
+            const peerId = e.target.dataset.peerId;
+            if (peerId && userRole === 'host') {
+                // Получаем пира из списка
+                const peer = peers.get(peerId);
+                if (peer) {
+                    // Инвертируем статус убит/не убит
+                    const newKilledStatus = !peer.killed;
+                    
+                    // Отправляем новый статус на сервер
+                    sendMessage({
+                        type: 'kill_peer',  // новый тип сообщения для сервера
+                        targetId: peerId,
+                        killed: newKilledStatus
+                    });
+                    
+                    console.log(`Toggling killed status for peer ${peerId} to ${newKilledStatus}`);
+                    
+                    // Обновляем локально (хотя сервер должен прислать подтверждение)
+                    peer.killed = newKilledStatus;
+                    updatePeerKilledStatus(peerId);
+                }
+            }
+        }
+    });
+
     // Показать/скрыть пользовательские настройки видео для сайдбара
     if (sidebarVideoQualitySelect) {
         sidebarVideoQualitySelect.addEventListener('change', () => {

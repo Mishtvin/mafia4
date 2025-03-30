@@ -134,10 +134,15 @@ body {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    display: flex;
+    display: none; /* По умолчанию скрыта */
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
+}
+
+/* Показываем кнопку только при наведении на видео-элемент */
+.video-item:hover .kill-button {
+    display: flex;
 }
 
 .kill-button:hover {

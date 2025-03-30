@@ -175,6 +175,11 @@ function handleMessage(clientId, message) {
             handleKilledStatus(clientId, message);
             break;
             
+        case 'kill_peer':
+            // Ведущий меняет статус "отключен/убит" для другого участника
+            handleKillPeer(clientId, message);
+            break;
+            
         case 'change_order_index':
             // Изменение порядкового номера игрока
             handleChangeOrderIndex(clientId, message);
@@ -274,6 +279,58 @@ function handleKilledStatus(clientId, message) {
         type: 'killed_confirmed',
         id: clientId,
         killed: client.killed
+    });
+}
+
+// Ведущий изменяет статус "вбито" для другого участника
+function handleKillPeer(clientId, message) {
+    const client = clients.get(clientId);
+    if (!client || !client.room) return;
+    
+    // Проверяем, что инициатор - ведущий
+    if (client.role !== 'host') {
+        sendToClient(client.ws, {
+            type: 'error',
+            message: 'Только ведущий может управлять статусом других участников'
+        });
+        return;
+    }
+    
+    // Получаем целевого клиента
+    const targetId = message.targetId;
+    const targetClient = clients.get(targetId);
+    
+    if (!targetClient || targetClient.room !== client.room) {
+        sendToClient(client.ws, {
+            type: 'error',
+            message: 'Указанный участник не найден или не в той же комнате'
+        });
+        return;
+    }
+    
+    // Обновляем статус целевого клиента
+    targetClient.killed = !!message.killed;
+    console.log(`Host ${clientId} set client ${targetId} killed status to ${targetClient.killed ? 'killed (ВБИТО)' : 'alive'}`);
+    
+    // Сообщаем всем в комнате об изменении статуса
+    broadcastToRoom(client.room, {
+        type: 'user_killed',
+        id: targetId,
+        killed: targetClient.killed
+    });
+    
+    // Подтверждаем изменение статуса целевому клиенту
+    sendToClient(targetClient.ws, {
+        type: 'killed_confirmed',
+        id: targetId,
+        killed: targetClient.killed
+    });
+    
+    // Подтверждаем ведущему успешное изменение
+    sendToClient(client.ws, {
+        type: 'kill_peer_confirmed', 
+        targetId: targetId,
+        killed: targetClient.killed
     });
 }
 
