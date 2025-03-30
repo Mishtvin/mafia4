@@ -582,12 +582,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // Create local video element
             localVideo = document.createElement('div');
             localVideo.className = 'video-item';
-            
-            // Добавляем класс host-controlled если пользователь ведущий
-            if (userRole === 'host') {
-                localVideo.classList.add('host-controlled');
-            }
-            
             // Вместо добавления класса host, сразу включаем роль в текст
             const roleText = userRole === 'host' ? ` (ведучий)` : '';
             console.log(`DEBUG: Creating local video with role ${userRole}, roleText="${roleText}"`);
@@ -989,7 +983,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     // Если это сообщение касается нашего собственного статуса,
                     // обновляем локальное состояние и интерфейс
-                    if (message.id === serverId) {
+                    if (message.id === clientId) {
                         isKilled = message.killed;
                         updateLocalKilledStatus();
                     }
@@ -1712,7 +1706,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Create a remote video element for a peer
     function createRemoteVideoElement(peerId, stream) {
-        console.log(`DEBUG: Creating remote video for peer ${peerId}, isHost=${peer && (peer.role === 'host')}, displayName="${displayName}"`);
+        console.log(`Creating video element for peer ${peerId} with stream:`, stream);
         
         try {
             // Remove existing element if it exists
@@ -1763,11 +1757,6 @@ document.addEventListener('DOMContentLoaded', () => {
             videoItem.className = 'video-item';
             videoItem.id = `remote-${peerId}`;
             videoItem.dataset.peerId = peerId;
-            
-            // Если текущий пользователь ведущий, добавляем класс для возможности клика на ангелочка
-            if (userRole === 'host') {
-                videoItem.classList.add('host-controlled');
-            }
             
             // Если пир имеет статус "убит", добавить соответствующий класс
             if (peer && peer.killed) {
