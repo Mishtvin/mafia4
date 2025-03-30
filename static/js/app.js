@@ -74,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let videoEnabled = true;
     let isKilled = false;  // Состояние "отключен/убит"
     let userRole = 'player'; // Роль пользователя ('player' или 'host')
+    let userOrderIndex = 0; // Порядковый номер пользователя (для сортировки видео)
     
     // Список доступных камер и выбранная камера
     let availableCameras = [];
@@ -589,8 +590,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Set the stream as source
             videoElement.srcObject = stream;
             
-            // Add local video to the grid
-            videoContainer.appendChild(localVideo);
+            // Add local video to the grid - всегда вставляем в начало
+            videoContainer.insertBefore(localVideo, videoContainer.firstChild);
             
             // Ensure video plays
             try {
@@ -681,7 +682,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Обновить роль пользователя в соответствии с подтверждением сервера
                 userRole = message.role || 'player';
-                console.log(`Joined as ${userRole}`);
+                // Сохраняем порядковый номер пользователя
+                userOrderIndex = message.orderIndex || 0;
+                console.log(`Joined as ${userRole} with order index ${userOrderIndex}`);
                 console.log(`DEBUG: User role set to ${userRole}, this should be visible in the label`);
                 
                 // Не добавляем отдельный индикатор роли, отображаем её в имени
@@ -731,7 +734,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             username: user.username,
                             killed: user.killed || false,
                             role: user.role || 'player',
-                            isHost: user.role === 'host'
+                            isHost: user.role === 'host',
+                            orderIndex: user.orderIndex || 0
                         });
                         
                         // Инициировать соединение
@@ -741,6 +745,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Обновить выпадающий список для переименования
                 updatePeerSelect();
+                
+                // Пересортировать видео элементы по порядковым номерам
+                sortVideoElements();
                 
                 // Показать секцию для переименования других участников только если есть другие участники
                 renamePeerSection.style.display = peers.size > 0 ? 'block' : 'none';
@@ -754,11 +761,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         username: message.username,
                         killed: message.killed || false,
                         role: message.role || 'player',
-                        isHost: message.isHost || false
+                        isHost: message.isHost || false,
+                        orderIndex: message.orderIndex || 0
                     });
                     
                     // Обновить выпадающий список для переименования
                     updatePeerSelect();
+                    
+                    // Пересортировать видео элементы по порядковым номерам
+                    sortVideoElements();
                     
                     // Показать секцию для переименования других участников
                     renamePeerSection.style.display = 'block';
@@ -786,6 +797,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     // User left, clean up connection
                     removePeer(message.id);
+                    
+                    // Пересортировать видео элементы по порядковым номерам
+                    sortVideoElements();
                 }
                 break;
                 
@@ -1446,8 +1460,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return false;
             });
             
-            // Add to video container
+            // Добавляем в контейнер и сортируем видео по порядковым номерам
             videoContainer.appendChild(videoItem);
+            sortVideoElements();
             
             // Play the video with proper error handling
             const playPromise = videoElement.play();
@@ -1473,6 +1488,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Скрыть контекстное меню
+    // Сортировка видео элементов по порядковым номерам
+    function sortVideoElements() {
+        console.log('Sorting video elements by order index');
+        
+        // Получаем все видео элементы кроме локального видео
+        const videoItems = Array.from(videoContainer.querySelectorAll('.video-item'))
+            .filter(item => item !== localVideo);
+            
+        // Сортируем их по порядковым номерам
+        videoItems.sort((a, b) => {
+            const peerIdA = a.dataset.peerId;
+            const peerIdB = b.dataset.peerId;
+            
+            const peerA = peers.get(peerIdA);
+            const peerB = peers.get(peerIdB);
+            
+            const orderA = peerA ? peerA.orderIndex : 0;
+            const orderB = peerB ? peerB.orderIndex : 0;
+            
+            // Сортировка по возрастанию номера
+            return orderA - orderB;
+        });
+        
+        // Переносим локальное видео в начало
+        if (localVideo) {
+            videoContainer.insertBefore(localVideo, videoContainer.firstChild);
+        }
+        
+        // Переупорядочиваем удаленные видео
+        videoItems.forEach(item => {
+            videoContainer.appendChild(item);
+        });
+        
+        console.log('Video elements sorted');
+    }
+    
     function hideContextMenu() {
         videoContextMenu.classList.remove('show');
         document.removeEventListener('click', hideContextMenu);

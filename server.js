@@ -36,7 +36,8 @@ wss.on('connection', (ws) => {
         username: null,
         room: null,
         killed: false, // Статус "отключенный/убитый"
-        role: 'player' // Роль по умолчанию - 'player' (может быть 'player' или 'host')
+        role: 'player', // Роль по умолчанию - 'player' (может быть 'player' или 'host')
+        orderIndex: 0 // Порядковый номер пользователя (будет назначен при входе в комнату)
     });
     
     // Send initial connection confirmation
@@ -293,6 +294,17 @@ function handleJoin(clientId, message) {
     // Add to room - проверяем, не было ли уже этого участника в комнате
     if (!room.participants.includes(clientId)) {
         room.participants.push(clientId);
+        
+        // Назначаем порядковый номер - если это новый участник, берем максимальный существующий номер + 1
+        let maxOrderIndex = 0;
+        room.participants.forEach(id => {
+            const participant = clients.get(id);
+            if (participant && participant.orderIndex > maxOrderIndex) {
+                maxOrderIndex = participant.orderIndex;
+            }
+        });
+        client.orderIndex = maxOrderIndex + 1;
+        console.log(`Assigned order index ${client.orderIndex} to client ${clientId}`);
     }
     
     // Собираем полный список участников, исключая текущего клиента
@@ -305,7 +317,8 @@ function handleJoin(clientId, message) {
                 id: id,
                 username: participant.username,
                 killed: participant.killed,
-                role: participant.role
+                role: participant.role,
+                orderIndex: participant.orderIndex || 0
             };
         })
         .filter(p => p !== null);
@@ -317,7 +330,8 @@ function handleJoin(clientId, message) {
         room: roomName,
         users: otherParticipants,
         role: client.role,
-        hostId: room.hostId
+        hostId: room.hostId,
+        orderIndex: client.orderIndex // Передаем порядковый номер клиенту
     });
     
     // Notify others
@@ -328,7 +342,8 @@ function handleJoin(clientId, message) {
         username: username,
         killed: client.killed,
         role: client.role,
-        isHost: client.role === 'host'
+        isHost: client.role === 'host',
+        orderIndex: client.orderIndex
     }, clientId);
     
     // Логирование активных соединений для отладки
