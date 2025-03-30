@@ -1872,71 +1872,79 @@ document.addEventListener('DOMContentLoaded', () => {
         disconnect();
     });
     
-    // Дополнительная функция для переключения темы (светлая/темная)
-    setupLightDarkThemeToggle();
-});
-
-// Функция для настройки переключения между светлой и темной темой
-function setupLightDarkThemeToggle() {
-    const themeToggleBtn = document.getElementById('theme-toggle-btn');
-    const themeToggleBtnLogin = document.getElementById('theme-toggle-btn-login');
-    
-    // Определить начальное состояние темы
-    const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    let currentTheme = localStorage.getItem('theme');
-    
-    if (!currentTheme) {
-        currentTheme = prefersDarkScheme ? 'dark' : 'light';
-        localStorage.setItem('theme', currentTheme);
-    }
-    
-    // Применить тему при загрузке
-    document.documentElement.setAttribute('data-bs-theme', currentTheme);
-    
-    // Обновить иконки кнопок
-    updateThemeToggleButton(themeToggleBtn, currentTheme);
-    updateThemeToggleButton(themeToggleBtnLogin, currentTheme);
-    
-    // Слушатель для кнопки переключения в конференции
-    if (themeToggleBtn) {
-        themeToggleBtn.addEventListener('click', () => {
-            toggleTheme();
-        });
-    }
-    
-    // Слушатель для кнопки переключения на экране входа
-    if (themeToggleBtnLogin) {
-        themeToggleBtnLogin.addEventListener('click', () => {
-            toggleTheme();
-        });
-    }
-    
-    // Функция для переключения темы
-    function toggleTheme() {
-        // Инвертировать тему
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-bs-theme', newTheme);
+    // Функция для настройки переключения между светлой и темной темой
+    function setupLightDarkThemeToggle() {
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
+        const themeToggleBtnLogin = document.getElementById('theme-toggle-btn-login');
         
-        // Сохранить в localStorage
-        localStorage.setItem('theme', newTheme);
+        // Определить начальное состояние темы
+        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        let currentTheme = localStorage.getItem('theme');
         
-        // Обновить текущую тему
-        currentTheme = newTheme;
+        if (!currentTheme) {
+            currentTheme = prefersDarkScheme ? 'dark' : 'light';
+            localStorage.setItem('theme', currentTheme);
+        }
+        
+        // Применить тему при загрузке
+        document.documentElement.setAttribute('data-bs-theme', currentTheme);
         
         // Обновить иконки кнопок
-        updateThemeToggleButton(themeToggleBtn, currentTheme);
-        updateThemeToggleButton(themeToggleBtnLogin, currentTheme);
+        if (themeToggleBtn) {
+            themeToggleBtn.innerHTML = currentTheme === 'dark' 
+                ? '<span data-feather="sun"></span>' 
+                : '<span data-feather="moon"></span>';
+        }
+        
+        if (themeToggleBtnLogin) {
+            themeToggleBtnLogin.innerHTML = currentTheme === 'dark' 
+                ? '<span data-feather="sun"></span>' 
+                : '<span data-feather="moon"></span>';
+        }
+        
+        // Инициализировать иконки
+        feather.replace();
+        
+        // Функция для переключения темы
+        function toggleTheme() {
+            // Инвертировать тему
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-bs-theme', newTheme);
+            
+            // Сохранить в localStorage
+            localStorage.setItem('theme', newTheme);
+            
+            // Обновить текущую тему
+            currentTheme = newTheme;
+            
+            // Обновить иконки кнопок
+            if (themeToggleBtn) {
+                themeToggleBtn.innerHTML = currentTheme === 'dark' 
+                    ? '<span data-feather="sun"></span>' 
+                    : '<span data-feather="moon"></span>';
+            }
+            
+            if (themeToggleBtnLogin) {
+                themeToggleBtnLogin.innerHTML = currentTheme === 'dark' 
+                    ? '<span data-feather="sun"></span>' 
+                    : '<span data-feather="moon"></span>';
+            }
+            
+            // Обновить иконки
+            feather.replace();
+        }
+        
+        // Слушатель для кнопки переключения в конференции
+        if (themeToggleBtn) {
+            themeToggleBtn.addEventListener('click', toggleTheme);
+        }
+        
+        // Слушатель для кнопки переключения на экране входа
+        if (themeToggleBtnLogin) {
+            themeToggleBtnLogin.addEventListener('click', toggleTheme);
+        }
     }
     
-    // Вспомогательная функция для обновления иконки кнопки
-    function updateThemeToggleButton(button, theme) {
-        if (!button) return;
-        
-        const iconHTML = theme === 'dark' 
-            ? '<span data-feather="sun"></span>' 
-            : '<span data-feather="moon"></span>';
-            
-        button.innerHTML = iconHTML;
-        feather.replace();
-    }
-}
+    // Вызываем функцию для настройки темы
+    setupLightDarkThemeToggle();
+});
