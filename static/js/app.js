@@ -384,16 +384,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Обработчик события выбора камеры в форме логина удален
     
-    // Функция генерации случайного имени
+    // Функция генерации случайного имени из букв и цифр
     function generateRandomUsername() {
-        const adjectives = ['Яркий', 'Быстрый', 'Смелый', 'Тихий', 'Громкий', 'Умный', 'Сильный', 'Веселый', 'Добрый', 'Милый'];
-        const nouns = ['Лев', 'Волк', 'Орел', 'Тигр', 'Дельфин', 'Сокол', 'Медведь', 'Лиса', 'Пингвин', 'Енот'];
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const digits = '0123456789';
         
-        const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
-        const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
-        const randomNumber = Math.floor(Math.random() * 100);
+        let result = '';
         
-        return `${randomAdj}${randomNoun}${randomNumber}`;
+        // Генерируем 4 случайные буквы
+        for (let i = 0; i < 4; i++) {
+            result += characters.charAt(Math.floor(Math.random() * characters.length));
+        }
+        
+        // Добавляем 3 случайные цифры
+        for (let i = 0; i < 3; i++) {
+            result += digits.charAt(Math.floor(Math.random() * digits.length));
+        }
+        
+        return result;
     }
 
     // Роль пользователя уже определена ранее (player или host)
@@ -567,7 +575,7 @@ document.addEventListener('DOMContentLoaded', () => {
             localVideo = document.createElement('div');
             localVideo.className = 'video-item';
             // Вместо добавления класса host, сразу включаем роль в текст
-            const roleText = userRole === 'host' ? ` (ведущий)` : '';
+            const roleText = userRole === 'host' ? ` (ведучий)` : '';
             console.log(`DEBUG: Creating local video with role ${userRole}, roleText="${roleText}"`);
             
             // Добавляем кнопку убито только если это не ведущий
@@ -1029,9 +1037,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 // и метку ведущего в конце для ведущего
                 let displayName = '';
                 
-                // Для роли ведущего не добавляем номер, только (ведущий) после имени
+                // Для роли ведущего не добавляем номер, только (ведучий) после имени
                 if (userRole === 'host') {
-                    displayName = `You (${username}) (ведущий)`;
+                    displayName = `You (${username}) (ведучий)`;
                     console.log(`DEBUG: Setting label for HOST: ${displayName}`);
                     
                     // Для ведущего убираем возможность клика на номер
@@ -1102,9 +1110,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (peer.role === 'host' || peer.isHost) {
             if (localName) {
                 // Если есть локальное имя, используем его
-                displayName = `${localName} (ведущий)`;
+                displayName = `${localName} (ведучий)`;
             } else {
-                displayName = `${peer.username} (ведущий)`;
+                displayName = `${peer.username} (ведучий)`;
             }
             
             // Для ведущего убираем возможность клика на номер
@@ -1171,7 +1179,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Добавляем порядковый номер в отображаемое имя в списке
             let displayName = '';
             if (peer.role === 'host') {
-                displayName = peer.username + ' (ведущий)';
+                displayName = peer.username + ' (ведучий)';
             } else {
                 displayName = (peer.orderIndex ? peer.orderIndex + '. ' : '') + peer.username;
             }
@@ -1562,9 +1570,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isHost) {
                 if (localName) {
                     // Если есть локальное имя, используем его
-                    displayName = localName + ' (ведущий)';
+                    displayName = localName + ' (ведучий)';
                 } else if (peer && peer.username) {
-                    displayName = peer.username + ' (ведущий)';
+                    displayName = peer.username + ' (ведучий)';
                 }
             } else {
                 // Для игроков добавляем порядковый номер перед именем
