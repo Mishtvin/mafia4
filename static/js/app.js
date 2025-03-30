@@ -561,13 +561,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // Create local video element
             localVideo = document.createElement('div');
             localVideo.className = 'video-item';
-            // Если пользователь - ведущий, добавим соответствующий класс
-            if (userRole === 'host') {
-                localVideo.classList.add('host');
-            }
+            // Вместо добавления класса host, сразу включаем роль в текст
+            const roleText = userRole === 'host' ? ` (ведущий)` : '';
+            console.log(`DEBUG: Creating local video with role ${userRole}, roleText="${roleText}"`);
+            
             localVideo.innerHTML = `
                 <video autoplay muted playsinline></video>
-                <div class="video-label" id="local-username-label">You (${username})</div>
+                <div class="video-label" id="local-username-label">You (${username})${roleText}</div>
             `;
             
             const videoElement = localVideo.querySelector('video');
@@ -682,8 +682,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Обновить роль пользователя в соответствии с подтверждением сервера
                 userRole = message.role || 'player';
                 console.log(`Joined as ${userRole}`);
+                console.log(`DEBUG: User role set to ${userRole}, this should be visible in the label`);
                 
                 // Не добавляем отдельный индикатор роли, отображаем её в имени
+                // Обновить отображение имени в локальном видео
+                updateLocalLabel();
                 
                 // Обновить название комнаты в сайдбаре
                 updateRoomInfo(roomname);
@@ -876,6 +879,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     becomeHostBtn.addEventListener('click', () => {
                         // Отправка запроса на изменение роли
                         userRole = 'host';
+                        console.log("DEBUG: Role changed to host, updating label");
+                        updateLocalLabel(); // Сразу обновим метку, не дожидаясь ответа сервера
+                        
                         sendMessage({
                             type: 'join',
                             kind: 'join',
@@ -922,19 +928,27 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Обновить отображение имени для локального видео
     function updateLocalLabel() {
+        console.log(`DEBUG updateLocalLabel: userRole=${userRole}, username=${username}`);
         if (localVideo) {
             const label = localVideo.querySelector('.video-label');
             if (label) {
                 // Для роли ведущего добавляем (ведущий) после имени
                 if (userRole === 'host') {
+                    console.log(`DEBUG: Setting label for HOST: You (${username}) (ведущий)`);
                     label.textContent = `You (${username}) (ведущий)`;
                 } else {
+                    console.log(`DEBUG: Setting label for PLAYER: You (${username})`);
                     label.textContent = `You (${username})`;
                 }
+                console.log(`DEBUG: Final label content: "${label.textContent}"`);
+            } else {
+                console.error("DEBUG: Could not find .video-label element in localVideo");
             }
             
             // Убираем класс host для видео, т.к. теперь показываем роль в подписи имени
             localVideo.classList.remove('host');
+        } else {
+            console.error("DEBUG: localVideo element not found");
         }
     }
     
@@ -1364,11 +1378,21 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Определить имя для отображения
             let displayName = 'Participant';
+            let isHost = peer && (peer.role === 'host' || peer.isHost);
+            
             if (localName) {
+                // Если есть локальное имя, используем его
                 displayName = localName;
             } else if (peer && peer.username) {
                 displayName = peer.username;
             }
+            
+            // Добавляем метку ведущего, если у пира роль "host"
+            if (isHost) {
+                displayName += ' (ведущий)';
+            }
+            
+            console.log(`DEBUG: Creating remote video for peer ${peerId}, isHost=${isHost}, displayName="${displayName}"`);
             
             // Create new video container
             const videoItem = document.createElement('div');
