@@ -1871,6 +1871,4 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('beforeunload', () => {
         disconnect();
     });
-    
-    // Theme toggle initialized from theme-toggle.js
 });
