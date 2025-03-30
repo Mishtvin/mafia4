@@ -855,9 +855,26 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'ice':
                 // ICE candidate received
                 if (peerConnections[message.id]) {
+                    const pc = peerConnections[message.id];
                     const candidate = new RTCIceCandidate(message.candidate);
-                    peerConnections[message.id].addIceCandidate(candidate)
-                        .catch(error => console.error('Error adding ICE candidate:', error));
+                    
+                    // Проверяем, есть ли уже remote description
+                    // Это ключевая проверка для избежания ошибки "The remote description was null"
+                    if (pc.remoteDescription && pc.remoteDescription.type) {
+                        pc.addIceCandidate(candidate)
+                            .catch(error => console.error('Error adding ICE candidate:', error));
+                    } else {
+                        // Если remote description еще нет, сохраняем кандидатов для последующего добавления
+                        console.log(`Remote description not set yet for ${message.id}, buffering ICE candidate`);
+                        
+                        // Создаем буфер для кандидатов если его еще нет
+                        if (!pc.iceCandidatesBuffer) {
+                            pc.iceCandidatesBuffer = [];
+                        }
+                        
+                        // Сохраняем кандидата в буфер
+                        pc.iceCandidatesBuffer.push(candidate);
+                    }
                 }
                 break;
                 
@@ -1459,6 +1476,29 @@ document.addEventListener('DOMContentLoaded', () => {
                             return pc.setRemoteDescription(sdp);
                         })
                         .then(() => {
+                            console.log(`Remote description set for ${peerId} after rollback`);
+                            
+                            // Проверяем, есть ли буфер ICE кандидатов для этого соединения
+                            if (pc.iceCandidatesBuffer && pc.iceCandidatesBuffer.length > 0) {
+                                console.log(`Adding ${pc.iceCandidatesBuffer.length} buffered ICE candidates for ${peerId} after rollback`);
+                                
+                                // Добавляем все буферизованные ICE кандидаты
+                                const addCandidatePromises = pc.iceCandidatesBuffer.map(candidate => 
+                                    pc.addIceCandidate(candidate)
+                                      .catch(e => console.error(`Error adding buffered ICE candidate after rollback: ${e}`))
+                                );
+                                
+                                // Очищаем буфер после добавления
+                                Promise.all(addCandidatePromises)
+                                    .then(() => {
+                                        console.log(`Successfully added all buffered ICE candidates for ${peerId} after rollback`);
+                                        pc.iceCandidatesBuffer = [];
+                                    })
+                                    .catch(error => {
+                                        console.error(`Error adding buffered ICE candidates for ${peerId} after rollback:`, error);
+                                    });
+                            }
+                            
                             console.log(`Creating answer for ${peerId} after rollback`);
                             return pc.createAnswer();
                         })
@@ -1490,6 +1530,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     pc.setRemoteDescription(sdp)
                     .then(() => {
                         console.log(`Remote description set for ${peerId}, creating answer`);
+                        
+                        // Проверяем, есть ли буфер ICE кандидатов для этого соединения
+                        if (pc.iceCandidatesBuffer && pc.iceCandidatesBuffer.length > 0) {
+                            console.log(`Adding ${pc.iceCandidatesBuffer.length} buffered ICE candidates for ${peerId}`);
+                            
+                            // Добавляем все буферизованные ICE кандидаты
+                            const addCandidatePromises = pc.iceCandidatesBuffer.map(candidate => 
+                                pc.addIceCandidate(candidate)
+                                  .catch(e => console.error(`Error adding buffered ICE candidate: ${e}`))
+                            );
+                            
+                            // Очищаем буфер после добавления
+                            Promise.all(addCandidatePromises)
+                                .then(() => {
+                                    console.log(`Successfully added all buffered ICE candidates for ${peerId}`);
+                                    pc.iceCandidatesBuffer = [];
+                                })
+                                .catch(error => {
+                                    console.error(`Error adding buffered ICE candidates for ${peerId}:`, error);
+                                });
+                        }
+                        
                         return pc.createAnswer();
                     })
                     .then(answer => {
@@ -1524,6 +1586,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     pc.setRemoteDescription(sdp)
                     .then(() => {
                         console.log(`Successfully set remote answer from ${peerId}`);
+                        
+                        // Проверяем, есть ли буфер ICE кандидатов для этого соединения
+                        if (pc.iceCandidatesBuffer && pc.iceCandidatesBuffer.length > 0) {
+                            console.log(`Adding ${pc.iceCandidatesBuffer.length} buffered ICE candidates for ${peerId}`);
+                            
+                            // Добавляем все буферизованные ICE кандидаты
+                            const addCandidatePromises = pc.iceCandidatesBuffer.map(candidate => 
+                                pc.addIceCandidate(candidate)
+                                  .catch(e => console.error(`Error adding buffered ICE candidate: ${e}`))
+                            );
+                            
+                            // Очищаем буфер после добавления
+                            Promise.all(addCandidatePromises)
+                                .then(() => {
+                                    console.log(`Successfully added all buffered ICE candidates for ${peerId}`);
+                                    pc.iceCandidatesBuffer = [];
+                                })
+                                .catch(error => {
+                                    console.error(`Error adding buffered ICE candidates for ${peerId}:`, error);
+                                });
+                        }
                     })
                     .catch(error => {
                         console.error(`Error setting remote answer from ${peerId}:`, error);
