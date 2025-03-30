@@ -1045,6 +1045,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 displayName = `${peer.username} (ведущий)`;
             }
+            
+            // Для ведущего убираем возможность клика на номер
+            label.classList.remove('clickable-order-index');
         } else {
             // Для игроков добавляем порядковый номер перед именем
             const orderPrefix = peer.orderIndex ? `${peer.orderIndex}. ` : '';
@@ -1053,6 +1056,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 displayName = `${orderPrefix}${localName}`;
             } else {
                 displayName = `${orderPrefix}${peer.username}`;
+            }
+            
+            // Если это игрок и мы ведущий, добавляем класс для клика по номеру
+            if (userRole === 'host') {
+                label.classList.add('clickable-order-index');
+                
+                // Добавляем обработчик клика для изменения номера
+                if (!label.hasAttribute('order-index-click-handler')) {
+                    label.setAttribute('order-index-click-handler', 'true');
+                    label.addEventListener('click', (e) => {
+                        // Проверяем, что клик был на номере (в начале строки до первого пробела)
+                        const rect = label.getBoundingClientRect();
+                        const clickX = e.clientX - rect.left;
+                        
+                        // Примерная ширина цифры + точки (можно подстроить)
+                        const digitWidth = 15; // пикселей на символ
+                        const orderIndexWidth = orderPrefix.length * digitWidth;
+                        
+                        if (clickX <= orderIndexWidth) {
+                            // Клик на порядковом номере - устанавливаем ID пира и показываем диалог
+                            currentSettingsPeerId = peerId;
+                            showOrderIndexChangeDialog();
+                            e.stopPropagation();
+                        }
+                    });
+                }
+            } else {
+                // Для игрока при просмотре другого игрока убираем класс кликабельности
+                label.classList.remove('clickable-order-index');
             }
         }
         
@@ -2299,6 +2331,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // Обработчик события для изменения имени пользователя по клику на метку имени
     document.addEventListener('click', (e) => {
         // Проверяем, клик был на метке имени локального или удаленного видео
+        // Если клик на номере игрока (обрабатывается отдельно), то не запускаем переименование
+        
+        // Проверим, не кликнули ли на номере
+        // Для ведущего кликнуть по номеру игрока не должно вызывать диалог переименования
+        const isClickOnOrderIndex = e.target.classList.contains('clickable-order-index') &&
+            e.target.textContent.includes('.') && 
+            (userRole === 'host' ? !e.target.id.includes('local-username-label') : true);
+            
+        if (isClickOnOrderIndex) {
+            // Если клик на номере, проверяем, в начале строки ли этот клик
+            const rect = e.target.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            
+            // Определить, где заканчивается номер (перед точкой и пробелом)
+            const text = e.target.textContent;
+            const dotIndex = text.indexOf('.');
+            if (dotIndex !== -1) {
+                // Примерная ширина цифры + точки (можно подстроить)
+                const digitWidth = 15; // пикселей на символ
+                const orderIndexWidth = (dotIndex + 2) * digitWidth; // +2 для точки и пробела
+                
+                if (clickX <= orderIndexWidth) {
+                    // Клик на порядковом номере, не нужно запускать переименование
+                    return;
+                }
+            }
+        }
+        
         if (e.target.id === 'local-username-label' || 
             (e.target.classList.contains('video-label') && userRole === 'host')) {
             
