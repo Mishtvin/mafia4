@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const peerVideoSettings = new Map();
     
     // ID текущего пира для изменения настроек видео
-    let currentSettingsPeerId = null;
+    let currentSettingsPeerId = null; // ID пира для текущих настроек в контекстном меню
     
     // Инициализировать настройки локального видео при открытии модального окна
     if (localVideoSettingsBtn) {
@@ -1074,10 +1074,19 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Если есть локальное имя, показать его в скобках
             const localName = localPeerNames.get(peer.id);
-            if (localName) {
-                option.textContent = `${peer.username} (renamed to: ${localName})`;
+            
+            // Добавляем порядковый номер в отображаемое имя в списке
+            let displayName = '';
+            if (peer.role === 'host') {
+                displayName = peer.username + ' (ведущий)';
             } else {
-                option.textContent = peer.username;
+                displayName = (peer.orderIndex ? peer.orderIndex + '. ' : '') + peer.username;
+            }
+            
+            if (localName) {
+                option.textContent = `${displayName} (renamed to: ${localName})`;
+            } else {
+                option.textContent = displayName;
             }
             
             peerSelect.appendChild(option);
@@ -2186,7 +2195,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // Show error message
     // Показать диалог для изменения порядкового номера
     function showOrderIndexChangeDialog() {
-        if (userRole !== 'player') return; // Только для игроков
+        const currentPeer = peers.get(currentSettingsPeerId);
+        
+        // Проверка, что peer существует
+        if (!currentPeer) {
+            console.log('Invalid peer');
+            return;
+        }
+        
+        // Проверка, что это игрок, а не ведущий
+        if (currentPeer.role === 'host') {
+            console.log('Cannot change order index for host');
+            return;
+        }
+        
+        // Для ведущего - можно менять номера других игроков
+        // Для игрока - можно менять только свой номер
+        if (currentSettingsPeerId !== serverId && userRole !== 'host') {
+            console.log('Only host can change other players order index');
+            showError('Только ведущий может изменять номера других игроков');
+            return;
+        }
         
         // Создаем модальное окно
         const modal = document.createElement('div');
@@ -2195,7 +2224,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="modal-content">
                 <h3>Изменить порядковый номер</h3>
                 <p>Введите новый порядковый номер:</p>
-                <input type="number" min="1" id="new-order-index" value="${userOrderIndex}" class="form-control">
+                <input type="number" min="1" id="new-order-index" value="${currentPeer.orderIndex || 1}" class="form-control">
                 <div class="modal-buttons">
                     <button id="cancel-order-index" class="btn btn-secondary">Отмена</button>
                     <button id="confirm-order-index" class="btn btn-primary">Применить</button>
@@ -2222,10 +2251,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             // Отправляем запрос на сервер
-            sendMessage({
-                type: 'change_order_index',
-                orderIndex: newOrderIndex
-            });
+            // Если ведущий меняет номер другого игрока, добавляем targetId
+            if (userRole === 'host' && currentSettingsPeerId !== serverId) {
+                sendMessage({
+                    type: 'change_order_index',
+                    targetId: currentSettingsPeerId,
+                    orderIndex: newOrderIndex
+                });
+            } else {
+                // Изменение своего номера
+                sendMessage({
+                    type: 'change_order_index',
+                    orderIndex: newOrderIndex
+                });
+            }
             
             // Закрываем модальное окно
             document.body.removeChild(modal);
@@ -2251,10 +2290,25 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Обработчик события для изменения имени пользователя по клику на метку имени
     document.addEventListener('click', (e) => {
-        // Проверяем, что клик был на метке имени локального видео
-        if (e.target.id === 'local-username-label') {
+        // Проверяем, клик был на метке имени локального или удаленного видео
+        if (e.target.id === 'local-username-label' || 
+            (e.target.classList.contains('video-label') && userRole === 'host')) {
+            
             const videoItem = e.target.closest('.video-item');
             const originalContent = e.target.innerHTML;
+            
+            // Если это метка удаленного видео, сохраняем ID пира для переименования
+            if (e.target.classList.contains('video-label') && 
+                e.target.id !== 'local-username-label' && 
+                videoItem && videoItem.dataset.peerId) {
+                
+                // Установим ID пира, которого будем переименовывать
+                currentSettingsPeerId = videoItem.dataset.peerId;
+                
+                // Получаем текущее имя пира
+                const currentPeer = peers.get(currentSettingsPeerId);
+                if (!currentPeer) return;
+            }
             
             // Скрываем оригинальную метку
             e.target.style.display = 'none';
@@ -2264,8 +2318,17 @@ document.addEventListener('DOMContentLoaded', () => {
             editContainer.className = 'username-edit-container';
             
             // Создаем поле ввода и кнопку OK
+            // Если редактируем имя другого пользователя, получаем его значение
+            let initialName = username;
+            if (currentSettingsPeerId !== null && currentSettingsPeerId !== serverId) {
+                const peerToRename = peers.get(currentSettingsPeerId);
+                if (peerToRename) {
+                    initialName = peerToRename.username;
+                }
+            }
+            
             editContainer.innerHTML = `
-                <input type="text" class="username-edit-input" value="${username}">
+                <input type="text" class="username-edit-input" value="${initialName}">
                 <button class="username-edit-button">OK</button>
             `;
             
@@ -2281,12 +2344,21 @@ document.addEventListener('DOMContentLoaded', () => {
             // Обработчик для сохранения имени
             const saveUsername = () => {
                 const newName = input.value.trim();
-                if (newName && newName !== username) {
-                    // Отправить запрос на изменение имени
+                // Добавляем проверку на роль и ID для переименования других участников
+                if (userRole === 'host' && currentSettingsPeerId !== null && currentSettingsPeerId !== serverId) {
+                    // Ведущий переименовывает другого участника
+                    if (newName) {
+                        sendMessage({
+                            type: 'rename',
+                            targetId: currentSettingsPeerId,  // ID участника, которого переименовывают
+                            username: newName
+                        });
+                    }
+                } 
+                else if (newName && newName !== username) {
+                    // Стандартное переименование себя
                     sendMessage({
                         type: 'rename',
-                        kind: 'rename',
-                        id: serverId,
                         username: newName
                     });
                 }

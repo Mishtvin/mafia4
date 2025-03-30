@@ -194,22 +194,38 @@ function handleRename(clientId, message) {
     if (!client || !client.room) return;
     
     const newUsername = message.username || 'Anonymous';
+    // Если сообщение содержит targetId, то это переименование другого участника
+    const targetId = message.targetId || clientId;
+    
+    // Если переименовывают другого участника, проверить, что инициатор - ведущий
+    if (targetId !== clientId && client.role !== 'host') {
+        // Отказ в переименовании для не-ведущего
+        sendToClient(client.ws, {
+            type: 'error',
+            message: 'Только ведущий может переименовывать других участников'
+        });
+        return;
+    }
+    
+    // Получить клиента, которого переименовывают
+    const targetClient = clients.get(targetId);
+    if (!targetClient) return;
     
     // Обновить имя пользователя
-    client.username = newUsername;
-    console.log(`Client ${clientId} renamed to ${newUsername}`);
+    targetClient.username = newUsername;
+    console.log(`Client ${targetId} renamed to ${newUsername} by ${clientId}`);
     
     // Сообщить всем в комнате о смене имени
     broadcastToRoom(client.room, {
         type: 'user_renamed',
-        id: clientId,
+        id: targetId,
         username: newUsername
     });
     
-    // Подтвердить смену имени пользователю
+    // Подтвердить смену имени
     sendToClient(client.ws, {
         type: 'rename_confirmed',
-        id: clientId,
+        id: targetId,
         username: newUsername
     });
 }
@@ -452,14 +468,37 @@ function broadcastToRoom(roomName, message, exceptClientId = null) {
 // Обработка изменения порядкового номера игрока
 function handleChangeOrderIndex(clientId, message) {
     const client = clients.get(clientId);
-    if (!client || !client.room || client.role !== 'player') return;
+    if (!client || !client.room) return;
+    
+    // Если сообщение содержит targetId, то это изменение номера другого участника ведущим
+    const targetId = message.targetId || clientId;
+    const targetClient = clients.get(targetId);
+    
+    // Проверить права доступа: изменение своего номера или ведущий меняет чужой номер
+    if (targetId !== clientId && client.role !== 'host') {
+        // Отказ в изменении номера для не-ведущего
+        sendToClient(client.ws, {
+            type: 'error',
+            message: 'Только ведущий может менять порядковые номера других участников'
+        });
+        return;
+    }
+    
+    // Проверка, что целевой клиент существует и является игроком
+    if (!targetClient || targetClient.role !== 'player') {
+        sendToClient(client.ws, {
+            type: 'error',
+            message: 'Указанный участник не найден или не является игроком'
+        });
+        return;
+    }
     
     // Проверяем, что новый порядковый номер является числом
     const newOrderIndex = parseInt(message.orderIndex, 10);
     if (isNaN(newOrderIndex) || newOrderIndex <= 0) {
         sendToClient(client.ws, {
             type: 'error',
-            message: 'Invalid order index'
+            message: 'Неверный формат порядкового номера'
         });
         return;
     }
@@ -472,21 +511,21 @@ function handleChangeOrderIndex(clientId, message) {
     // Теперь несколько игроков могут иметь одинаковые порядковые номера
     
     // Обновляем порядковый номер клиента
-    const oldOrderIndex = client.orderIndex;
-    client.orderIndex = newOrderIndex;
-    console.log(`Client ${clientId} changed order index from ${oldOrderIndex} to ${newOrderIndex}`);
+    const oldOrderIndex = targetClient.orderIndex;
+    targetClient.orderIndex = newOrderIndex;
+    console.log(`Client ${targetId} changed order index from ${oldOrderIndex} to ${newOrderIndex} by ${clientId}`);
     
     // Уведомляем всех участников комнаты об изменении номера
     broadcastToRoom(client.room, {
         type: 'order_index_changed',
-        id: clientId,
+        id: targetId,
         orderIndex: newOrderIndex
     });
     
-    // Подтверждаем изменение номера клиенту
+    // Подтверждаем изменение номера
     sendToClient(client.ws, {
         type: 'order_index_changed_confirmed',
-        id: clientId,
+        id: targetId,
         orderIndex: newOrderIndex
     });
 }
