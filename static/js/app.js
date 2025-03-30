@@ -1665,11 +1665,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     })
                     .catch(error => {
                         console.error(`Error playing video from peer ${peerId}:`, error);
-                        // Try to play again after a delay
+                        // Try to play again after a delay only if the video element still exists in DOM
                         setTimeout(() => {
-                            videoElement.play()
-                                .then(() => console.log(`Retry successful for peer ${peerId}`))
-                                .catch(e => console.error(`Retry failed for peer ${peerId}:`, e));
+                            const videoStillExists = document.getElementById(`remote-${peerId}`);
+                            if (videoStillExists && document.body.contains(videoStillExists)) {
+                                videoElement.play()
+                                    .then(() => console.log(`Retry successful for peer ${peerId}`))
+                                    .catch(e => console.error(`Retry failed for peer ${peerId}:`, e));
+                            } else {
+                                console.log(`Not retrying play for ${peerId} - element no longer in DOM`);
+                            }
                         }, 1000);
                     });
             }
@@ -1752,6 +1757,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Remove a peer and clean up resources
     function removePeer(peerId) {
+        console.log(`Removing peer ${peerId}`);
         const pc = peerConnections[peerId];
         if (pc) {
             pc.close();
@@ -1760,8 +1766,24 @@ document.addEventListener('DOMContentLoaded', () => {
             // Remove the video element
             const videoElement = document.getElementById(`remote-${peerId}`);
             if (videoElement) {
+                // First stop video playback and remove srcObject to prevent AbortError
+                const video = videoElement.querySelector('video');
+                if (video) {
+                    try {
+                        // Pause the video first to prevent AbortError during removal
+                        video.pause();
+                        video.srcObject = null;
+                    } catch (e) {
+                        console.warn(`Error cleaning up video element for peer ${peerId}:`, e);
+                    }
+                }
                 videoElement.remove();
             }
+        }
+        
+        // Also remove from peers list
+        if (peers.has(peerId)) {
+            peers.delete(peerId);
         }
     }
 
