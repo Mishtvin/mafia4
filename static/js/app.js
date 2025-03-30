@@ -589,10 +589,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Добавляем кнопку убито только если это не ведущий
             const killButtonHtml = userRole === 'host' ? '' : '<button class="kill-button" id="kill-toggle-btn" title="Вбито">💀</button>';
             
+            // Добавляем ангелочка, который будет виден всем, когда пользователь "убит" (изначально скрыт)
+            const angelButtonHtml = '<button class="kill-button angel-icon" style="display: none;" title="Вбито">👼</button>';
+            
             localVideo.innerHTML = `
                 <video autoplay muted playsinline></video>
                 <div class="video-label" id="local-username-label">You (${username})${roleText}</div>
                 ${killButtonHtml}
+                ${angelButtonHtml}
             `;
             
             const videoElement = localVideo.querySelector('video');
@@ -1051,8 +1055,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // и НЕ добавляем класс killed, чтобы не применять стили черного фона
             let killMark = localVideo.querySelector('.kill-mark');
             
-            // Получаем кнопку закрытия сайдбара
+            // Получаем кнопку закрытия сайдбара и ангелочка для локального видео
             const closeSidebarBtn = document.getElementById('close-sidebar');
+            const angelButton = localVideo.querySelector('.kill-button');
             
             if (isKilled) {
                 // Добавляем маркер, если его еще нет
@@ -1063,6 +1068,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     localVideo.appendChild(killMark);
                 }
                 
+                // Показываем ангелочка, если есть
+                if (angelButton) {
+                    angelButton.style.display = 'flex';
+                    angelButton.innerHTML = '👼';
+                    angelButton.classList.add('angel-icon');
+                }
+                
                 // Меняем цвет кнопки закрытия на белый, если пользователь "убит"
                 if (closeSidebarBtn) {
                     closeSidebarBtn.classList.add('white');
@@ -1071,6 +1083,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Удаляем маркер, если он есть
                 if (killMark) {
                     killMark.remove();
+                }
+                
+                // Скрываем ангелочка, если он есть
+                if (angelButton) {
+                    angelButton.style.display = 'none';
                 }
                 
                 // Возвращаем исходный цвет кнопки закрытия
@@ -1764,12 +1781,22 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Не добавляем класс host, так как роль отображается в имени
             
-            // Добавляем кнопку убито только для игроков (не для ведущих)
-            // и только если текущий пользователь - ведущий
+            // Добавляем кнопку убито для игроков (не для ведущих):
+            // - ведущий видит кнопку-череп (кликабельная)
+            // - все видят ангелочка, если пир убит (некликабельная)
             const isKilled = peer && peer.killed;
             const angelClass = isKilled ? ' angel-icon' : '';
-            const killButtonHtml = !isHost && userRole === 'host' ? 
-                `<button class="kill-button remote-kill-button${angelClass}" data-peer-id="${peerId}" title="Вбито">${isKilled ? '👼' : '💀'}</button>` : '';
+            
+            let killButtonHtml = '';
+            if (!isHost) {
+                if (userRole === 'host') {
+                    // Для ведущего - кнопка всегда видна и кликабельна (череп или ангелочек)
+                    killButtonHtml = `<button class="kill-button remote-kill-button${angelClass}" data-peer-id="${peerId}" title="Вбито">${isKilled ? '👼' : '💀'}</button>`;
+                } else if (isKilled) {
+                    // Для обычных игроков - показываем ангелочка только если пир убит 
+                    killButtonHtml = `<button class="kill-button angel-icon" title="Вбито">👼</button>`;
+                }
+            }
                 
             // Для удаленных участников "ВБИТО" добавляется через CSS оформление,
             // не добавляем отдельный элемент с надписью - это только для локального видео
