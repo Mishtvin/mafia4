@@ -1,8 +1,112 @@
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
+:root {
+    --primary-color: #6c5ce7;
+    --primary-dark: #5541d7;
+    --primary-light: #897dec;
+    --accent-color: #8c7ae6;
+    --dark-bg: #121212;
+    --dark-surface: #1e1e1e;
+    --dark-card: #2d2d2d;
+    --light-text: #ffffff;
+    --secondary-text: #a7a7a7;
+    --danger-color: #e74c3c;
+    --warning-color: #f39c12;
+    --info-color: #3498db;
+    --success-color: #2ecc71;
 }
 
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--dark-bg);
+    color: var(--light-text);
+}
+
+/* Override Bootstrap styles */
+.card {
+    background-color: var(--dark-surface);
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.card-header {
+    background-color: var(--dark-card);
+    color: var(--light-text);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-weight: 600;
+}
+
+.form-control, .form-select {
+    background-color: var(--dark-card);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--light-text);
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--dark-card);
+    border-color: var(--primary-color);
+    color: var(--light-text);
+    box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.25);
+}
+
+.form-label {
+    color: var(--light-text);
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.text-muted {
+    color: var(--secondary-text) !important;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover, .btn-primary:focus {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.btn-secondary {
+    background-color: var(--dark-card);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+.btn-warning {
+    background-color: var(--warning-color);
+    border-color: var(--warning-color);
+    color: var(--dark-bg);
+}
+
+.btn-info {
+    background-color: var(--info-color);
+    border-color: var(--info-color);
+    color: var(--light-text);
+}
+
+.modal-content {
+    background-color: var(--dark-surface);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Video grid styles */
 .video-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -13,10 +117,11 @@ body {
 .video-item {
     position: relative;
     background-color: #000;
-    border-radius: 8px;
+    border-radius: 15px;
     overflow: hidden;
     aspect-ratio: 16/9;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(108, 92, 231, 0.2);
 }
 
 .video-item video {
@@ -29,21 +134,27 @@ body {
     position: absolute;
     bottom: 10px;
     left: 10px;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.7);
     color: white;
-    padding: 5px 10px;
-    border-radius: 4px;
+    padding: 8px 15px;
+    border-radius: 20px;
     font-size: 14px;
+    font-weight: 500;
 }
 
+/* Control buttons */
 .button-controls {
     margin-top: 20px;
 }
 
 .button-controls button {
     margin: 0 5px;
+    border-radius: 30px;
+    padding: 8px 16px;
+    font-weight: 500;
 }
 
+/* Responsive adjustments */
 @media (max-width: 768px) {
     .video-grid {
         grid-template-columns: 1fr;
@@ -58,10 +169,12 @@ body {
     }
 }
 
-#toggle-video svg,
-#leave-btn svg {
-    width: 16px;
-    height: 16px;
+/* Icon styles */
+[data-feather] {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.5;
+    vertical-align: text-bottom;
     margin-right: 5px;
 }
 
@@ -71,9 +184,9 @@ body {
     grid-column: 1 / -1;
     text-align: center;
     padding: 40px;
-    color: #6c757d;
+    color: var(--secondary-text);
     font-style: italic;
-    background-color: #e9ecef;
+    background-color: var(--dark-card);
     border-radius: 8px;
 }
 
@@ -105,10 +218,11 @@ body {
     min-width: 200px;
     z-index: 1000;
     position: absolute;
-    background-color: white;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    border-radius: 4px;
+    background-color: var(--dark-card);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
     display: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 #video-context-menu.show {
@@ -117,45 +231,52 @@ body {
 
 .dropdown-item {
     display: block;
-    padding: 8px 16px;
-    color: #212529;
+    padding: 10px 16px;
+    color: var(--light-text);
     text-decoration: none;
     cursor: pointer;
+    border-radius: 4px;
 }
 
 .dropdown-item:hover {
-    background-color: #f8f9fa;
+    background-color: rgba(108, 92, 231, 0.2);
 }
 
 .dropdown-item span {
     margin-right: 8px;
 }
 
-/* Video settings modal styling */
-#custom-video-settings, #peer-custom-video-settings {
-    background-color: #f8f9fa;
-    border-radius: 4px;
-    padding: 10px;
+/* Video settings styling */
+#custom-video-settings, 
+#peer-custom-video-settings, 
+#sidebar-custom-video-settings {
+    background-color: var(--dark-card);
+    border-radius: 8px;
+    padding: 15px;
     margin-top: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-#peer-bitrate-value, #local-bitrate-value {
+#peer-bitrate-value, 
+#local-bitrate-value {
     font-weight: bold;
+    color: var(--primary-light);
 }
 
 /* Sidebar styles */
 .control-sidebar {
     position: fixed;
     height: 100%;
-    width: 320px;
+    width: 350px;
     top: 0;
-    right: -320px;
-    background-color: #fff;
-    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+    right: -350px;
+    background-color: var(--dark-surface);
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.5);
     transition: right 0.3s ease;
     overflow-y: auto;
     z-index: 1050;
-    padding: 20px;
+    padding: 25px;
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .control-sidebar.show {
@@ -167,12 +288,14 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding-bottom: 15px;
 }
 
 .sidebar-header h4 {
     margin: 0;
+    font-weight: 600;
+    color: var(--primary-light);
 }
 
 .sidebar-toggle-btn {
@@ -186,17 +309,80 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    background-color: var(--primary-color);
+    border: none;
 }
 
 .sidebar-section {
-    margin-bottom: 25px;
+    margin-bottom: 30px;
+    background-color: var(--dark-card);
+    padding: 20px;
+    border-radius: 10px;
 }
 
 .sidebar-section h5 {
-    margin-bottom: 15px;
-    border-bottom: 1px dashed #ccc;
-    padding-bottom: 8px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+    color: var(--primary-light);
+    font-weight: 600;
+}
+
+.alert-info {
+    background-color: rgba(52, 152, 219, 0.2);
+    border-color: rgba(52, 152, 219, 0.3);
+    color: var(--light-text);
+}
+
+/* User avatar circle styles */
+.user-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0 auto 20px;
+}
+
+/* Join button hero style */
+.join-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 20px;
+    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.5);
+    transition: all 0.3s ease;
+}
+
+.join-btn:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.6);
+}
+
+/* Status and camera buttons */
+.action-btn {
+    width: 100%;
+    border-radius: 30px;
+    padding: 10px;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.action-btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
 }
 
 @media (max-width: 576px) {
