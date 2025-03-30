@@ -72,10 +72,10 @@
                     <button id="sidebar-toggle-video" class="btn btn-primary">
                         <span data-feather="video-off"></span> Toggle Video
                     </button>
-                    <button id="sidebar-toggle-killed" class="btn btn-warning">
+                    <button id="sidebar-toggle-killed" class="btn btn-dark">
                         <span data-feather="user-x"></span> Toggle Killed
                     </button>
-                    <button id="sidebar-rename-btn" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#rename-modal">
+                    <button id="sidebar-rename-btn" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#rename-modal">
                         <span data-feather="edit"></span> Rename
                     </button>
                 </div>
@@ -150,22 +150,7 @@
             <div class="col-12">
                 <div id="video-container" class="video-grid"></div>
             </div>
-            <div class="col-12 mt-3">
-                <div class="button-controls text-center">
-                    <button id="toggle-video" class="btn btn-primary me-2">
-                        <span data-feather="video-off"></span> Toggle Video
-                    </button>
-                    <button id="toggle-killed" class="btn btn-warning me-2">
-                        <span data-feather="user-x"></span> Toggle Killed
-                    </button>
-                    <button id="rename-btn" class="btn btn-info me-2" data-bs-toggle="modal" data-bs-target="#rename-modal">
-                        <span data-feather="edit"></span> Rename
-                    </button>
-                    <button id="local-video-settings-btn" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#local-video-settings-modal">
-                        <span data-feather="settings"></span> Video Settings
-                    </button>
-                </div>
-            </div>
+            <!-- Removed button controls that are in sidebar -->
         </div>
 
         <!-- Error Modal -->
@@ -212,7 +197,7 @@
                                 <label for="peer-new-name" class="form-label">New Name (only you will see this):</label>
                                 <input type="text" class="form-control" id="peer-new-name">
                             </div>
-                            <button type="button" class="btn btn-info" id="rename-peer-btn">
+                            <button type="button" class="btn btn-primary" id="rename-peer-btn">
                                 Rename Participant
                             </button>
                         </div>

@@ -1,6 +1,7 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
+    background-color: #121212;
+    color: #f8f9fa;
 }
 
 .video-grid {
@@ -71,9 +72,9 @@ body {
     grid-column: 1 / -1;
     text-align: center;
     padding: 40px;
-    color: #6c757d;
+    color: #f8f9fa;
     font-style: italic;
-    background-color: #e9ecef;
+    background-color: #2d2d2d;
     border-radius: 8px;
 }
 
@@ -105,10 +106,11 @@ body {
     min-width: 200px;
     z-index: 1000;
     position: absolute;
-    background-color: white;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    background-color: #1e1e1e;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
     border-radius: 4px;
     display: none;
+    border: 1px solid #333;
 }
 
 #video-context-menu.show {
@@ -118,13 +120,13 @@ body {
 .dropdown-item {
     display: block;
     padding: 8px 16px;
-    color: #212529;
+    color: #f8f9fa;
     text-decoration: none;
     cursor: pointer;
 }
 
 .dropdown-item:hover {
-    background-color: #f8f9fa;
+    background-color: #8a2be2;
 }
 
 .dropdown-item span {
@@ -150,8 +152,9 @@ body {
     width: 320px;
     top: 0;
     left: -320px;
-    background-color: #fff;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+    background-color: #1e1e1e;
+    color: #f8f9fa;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
     transition: left 0.3s ease;
     overflow-y: auto;
     z-index: 1050;
@@ -167,12 +170,13 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #333;
     padding-bottom: 15px;
 }
 
 .sidebar-header h4 {
     margin: 0;
+    color: #fff;
 }
 
 .sidebar-toggle-btn {
@@ -195,8 +199,68 @@ body {
 
 .sidebar-section h5 {
     margin-bottom: 15px;
-    border-bottom: 1px dashed #ccc;
+    border-bottom: 1px dashed #444;
     padding-bottom: 8px;
+    color: #fff;
+}
+
+/* Purple button styles */
+.btn-primary {
+    background-color: #8a2be2;
+    border-color: #8a2be2;
+}
+
+.btn-primary:hover {
+    background-color: #7726c3;
+    border-color: #7726c3;
+}
+
+/* Form controls in dark theme */
+.form-control, .form-select {
+    background-color: #2d2d2d;
+    border-color: #444;
+    color: #f8f9fa;
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: #2d2d2d;
+    border-color: #8a2be2;
+    color: #f8f9fa;
+    box-shadow: 0 0 0 0.25rem rgba(138, 43, 226, 0.25);
+}
+
+/* Cards in dark theme */
+.card {
+    background-color: #2d2d2d;
+    border-color: #444;
+}
+
+.card-header {
+    background-color: #1e1e1e;
+    border-bottom-color: #444;
+    color: #f8f9fa;
+}
+
+/* Small text and hints */
+.text-muted {
+    color: #adb5bd !important;
+}
+
+/* Modals in dark theme */
+.modal-content {
+    background-color: #2d2d2d;
+    border-color: #444;
+}
+
+.modal-header, .modal-footer {
+    border-color: #444;
+}
+
+/* Alerts in dark theme */
+.alert-info {
+    background-color: #1e1e1e;
+    border-color: #444;
+    color: #adb5bd;
 }
 
 @media (max-width: 576px) {
