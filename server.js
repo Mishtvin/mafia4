@@ -34,7 +34,8 @@ wss.on('connection', (ws) => {
         id: clientId,
         ws: ws,
         username: null,
-        room: null
+        room: null,
+        killed: false // Статус "отключенный/убитый"
     });
     
     // Send initial connection confirmation
@@ -142,12 +143,89 @@ function handleMessage(clientId, message) {
             forwardSDP(clientId, message);
             break;
             
+        case 'rename':
+            handleRename(clientId, message);
+            break;
+            
+        case 'rename_peer':
+            // Переименование другого пира (локально)
+            handleRenamePeer(clientId, message);
+            break;
+            
+        case 'killed':
+            // Обновление статуса "отключен/убит"
+            handleKilledStatus(clientId, message);
+            break;
+            
         default:
             sendToClient(client.ws, {
                 type: 'error',
                 message: 'Unknown message type'
             });
     }
+}
+
+// Обработка изменения собственного имени (видно всем)
+function handleRename(clientId, message) {
+    const client = clients.get(clientId);
+    if (!client || !client.room) return;
+    
+    const newUsername = message.username || 'Anonymous';
+    
+    // Обновить имя пользователя
+    client.username = newUsername;
+    console.log(`Client ${clientId} renamed to ${newUsername}`);
+    
+    // Сообщить всем в комнате о смене имени
+    broadcastToRoom(client.room, {
+        type: 'user_renamed',
+        id: clientId,
+        username: newUsername
+    });
+    
+    // Подтвердить смену имени пользователю
+    sendToClient(client.ws, {
+        type: 'rename_confirmed',
+        id: clientId,
+        username: newUsername
+    });
+}
+
+// Обработка переименования другого пира (локально для данного клиента)
+function handleRenamePeer(clientId, message) {
+    const client = clients.get(clientId);
+    if (!client) return;
+    
+    // Просто подтвердить получение (изменение хранится только на клиенте)
+    sendToClient(client.ws, {
+        type: 'rename_peer_confirmed',
+        id: message.peerId,
+        username: message.username
+    });
+}
+
+// Обработка изменения статуса "отключен/убит"
+function handleKilledStatus(clientId, message) {
+    const client = clients.get(clientId);
+    if (!client || !client.room) return;
+    
+    // Обновить статус пользователя
+    client.killed = !!message.killed;
+    console.log(`Client ${clientId} ${client.killed ? 'killed' : 'revived'}`);
+    
+    // Сообщить всем в комнате об изменении статуса
+    broadcastToRoom(client.room, {
+        type: 'user_killed',
+        id: clientId,
+        killed: client.killed
+    });
+    
+    // Подтвердить изменение статуса пользователю
+    sendToClient(client.ws, {
+        type: 'killed_confirmed',
+        id: clientId,
+        killed: client.killed
+    });
 }
 
 // Handle joining a room
@@ -184,7 +262,8 @@ function handleJoin(clientId, message) {
             const participant = clients.get(id);
             return {
                 id: id,
-                username: participant ? participant.username : 'Unknown'
+                username: participant ? participant.username : 'Unknown',
+                killed: participant ? participant.killed : false
             };
         })
     });
@@ -194,7 +273,8 @@ function handleJoin(clientId, message) {
         type: 'user',
         kind: 'add',
         id: clientId,
-        username: username
+        username: username,
+        killed: client.killed
     }, clientId);
     
     console.log(`Client ${clientId} (${username}) joined room: ${roomName}`);

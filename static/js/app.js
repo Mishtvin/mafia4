@@ -13,8 +13,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentRoomSpan = document.getElementById('current-room');
     const leaveBtn = document.getElementById('leave-btn');
     const toggleVideoBtn = document.getElementById('toggle-video');
+    const toggleKilledBtn = document.getElementById('toggle-killed');
+    const renameBtn = document.getElementById('rename-btn');
+    const confirmRenameBtn = document.getElementById('confirm-rename-btn');
+    const newUsernameInput = document.getElementById('new-username');
+    const renamePeerBtn = document.getElementById('rename-peer-btn');
+    const peerSelect = document.getElementById('peer-select');
+    const peerNewNameInput = document.getElementById('peer-new-name');
+    const renamePeerSection = document.getElementById('rename-peer-section');
+    const renameModal = new bootstrap.Modal(document.getElementById('rename-modal'));
     const errorModal = new bootstrap.Modal(document.getElementById('error-modal'));
     const errorMessage = document.getElementById('error-message');
+    const videoContextMenu = document.getElementById('video-context-menu');
 
     // WebRTC and Galène variables
     let socket = null;
@@ -25,6 +35,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let roomname = '';
     let serverId = null;
     let videoEnabled = true;
+    let isKilled = false;  // Состояние "отключен/убит"
+    
+    // Локальные переименования других пиров (видны только пользователю)
+    const localPeerNames = new Map();
+    // Информация о пирах
+    const peers = new Map();
 
     // Join form submission handler
     joinForm.addEventListener('submit', async (e) => {
@@ -205,16 +221,53 @@ document.addEventListener('DOMContentLoaded', () => {
                 conferenceSection.style.display = 'block';
                 currentRoomSpan.textContent = roomname;
                 
-                // Start negotiation with existing peers
+                // Показать имя пользователя в поле изменения имени
+                newUsernameInput.value = username;
+                
+                // Очистить информацию и инициализировать список пиров
+                peers.clear();
+                localPeerNames.clear();
+                updatePeerSelect();
+                
+                // Добавить пиров из комнаты и начать соединение
                 message.users.forEach(user => {
+                    // Сохранить информацию о пире
+                    if (user.id !== serverId) {
+                        peers.set(user.id, {
+                            id: user.id,
+                            username: user.username,
+                            killed: user.killed || false
+                        });
+                    }
+                    
+                    // Инициировать соединение
                     if (user.id !== serverId) {
                         initiateConnection(user.id);
                     }
                 });
+                
+                // Обновить выпадающий список для переименования
+                updatePeerSelect();
+                
+                // Показать секцию для переименования других участников только если есть другие участники
+                renamePeerSection.style.display = peers.size > 0 ? 'block' : 'none';
                 break;
                 
             case 'user':
                 if (message.kind === 'add' && message.id !== serverId) {
+                    // Добавляем нового пира в список
+                    peers.set(message.id, {
+                        id: message.id,
+                        username: message.username,
+                        killed: message.killed || false
+                    });
+                    
+                    // Обновить выпадающий список для переименования
+                    updatePeerSelect();
+                    
+                    // Показать секцию для переименования других участников
+                    renamePeerSection.style.display = 'block';
+                    
                     // New user joined, initiate connection only if our ID is "greater"
                     // This prevents both peers from initiating at the same time
                     if (serverId > message.id) {
@@ -224,6 +277,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.log(`Waiting for connection from peer with higher ID (${message.id} > ${serverId})`);
                     }
                 } else if (message.kind === 'delete' && peerConnections[message.id]) {
+                    // Удаляем пира из списка
+                    peers.delete(message.id);
+                    
+                    // Удаляем локальную информацию об имени пира
+                    localPeerNames.delete(message.id);
+                    
+                    // Обновить выпадающий список для переименования
+                    updatePeerSelect();
+                    
+                    // Скрыть секцию для переименования если нет других участников
+                    renamePeerSection.style.display = peers.size > 0 ? 'block' : 'none';
+                    
                     // User left, clean up connection
                     removePeer(message.id);
                 }
@@ -242,7 +307,142 @@ document.addEventListener('DOMContentLoaded', () => {
                 // SDP offer or answer received
                 handleSDP(message);
                 break;
+                
+            case 'user_renamed':
+                // Обработка сообщения о переименовании пира
+                if (message.id !== serverId) {
+                    // Обновить имя в списке пиров
+                    const peer = peers.get(message.id);
+                    if (peer) {
+                        peer.username = message.username;
+                        
+                        // Обновить имя в видео элементе
+                        updatePeerLabel(message.id);
+                        
+                        // Обновить выпадающий список для переименования
+                        updatePeerSelect();
+                    }
+                }
+                break;
+                
+            case 'rename_confirmed':
+                // Подтверждение изменения собственного имени
+                if (message.id === serverId) {
+                    username = message.username;
+                    // Обновить имя в видео элементе
+                    updateLocalLabel();
+                }
+                break;
+                
+            case 'rename_peer_confirmed':
+                // Подтверждение изменения имени другого пира (только для нас)
+                const peerId = message.id;
+                localPeerNames.set(peerId, message.username);
+                // Обновить имя в видео элементе
+                updatePeerLabel(peerId);
+                break;
+                
+            case 'user_killed':
+                // Обработка изменения статуса "отключен/убит"
+                if (message.id !== serverId) {
+                    // Обновить статус в списке пиров
+                    const peer = peers.get(message.id);
+                    if (peer) {
+                        peer.killed = message.killed;
+                        
+                        // Обновить отображение в видео элементе
+                        updatePeerKilledStatus(message.id);
+                    }
+                }
+                break;
+                
+            case 'killed_confirmed':
+                // Подтверждение изменения собственного статуса
+                if (message.id === serverId) {
+                    isKilled = message.killed;
+                    // Обновить отображение в видео элементе
+                    updateLocalKilledStatus();
+                }
+                break;
         }
+    }
+    
+    // Обновить отображение локального статуса "убит"
+    function updateLocalKilledStatus() {
+        if (localVideo) {
+            if (isKilled) {
+                localVideo.classList.add('killed');
+            } else {
+                localVideo.classList.remove('killed');
+            }
+        }
+    }
+    
+    // Обновить отображение статуса "убит" для удаленного пира
+    function updatePeerKilledStatus(peerId) {
+        const videoElement = document.getElementById(`remote-${peerId}`);
+        const peer = peers.get(peerId);
+        
+        if (videoElement && peer) {
+            if (peer.killed) {
+                videoElement.classList.add('killed');
+            } else {
+                videoElement.classList.remove('killed');
+            }
+        }
+    }
+    
+    // Обновить отображение имени для локального видео
+    function updateLocalLabel() {
+        if (localVideo) {
+            const label = localVideo.querySelector('.video-label');
+            if (label) {
+                label.textContent = `You (${username})`;
+            }
+        }
+    }
+    
+    // Обновить отображение имени для удаленного пира
+    function updatePeerLabel(peerId) {
+        const videoElement = document.getElementById(`remote-${peerId}`);
+        if (!videoElement) return;
+        
+        const label = videoElement.querySelector('.video-label');
+        if (!label) return;
+        
+        // Если есть локальное имя, используем его, иначе используем имя из списка пиров
+        const localName = localPeerNames.get(peerId);
+        const peer = peers.get(peerId);
+        
+        if (localName) {
+            label.textContent = localName;
+        } else if (peer) {
+            label.textContent = peer.username;
+        } else {
+            label.textContent = 'Participant';
+        }
+    }
+    
+    // Обновить выпадающий список для переименования
+    function updatePeerSelect() {
+        // Очистить список
+        peerSelect.innerHTML = '<option value="">-- Select Participant --</option>';
+        
+        // Добавить всех пиров в выпадающий список
+        peers.forEach(peer => {
+            const option = document.createElement('option');
+            option.value = peer.id;
+            
+            // Если есть локальное имя, показать его в скобках
+            const localName = localPeerNames.get(peer.id);
+            if (localName) {
+                option.textContent = `${peer.username} (renamed to: ${localName})`;
+            } else {
+                option.textContent = peer.username;
+            }
+            
+            peerSelect.appendChild(option);
+        });
     }
 
     // Initiate WebRTC connection with a peer
@@ -526,13 +726,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.warn(`Stream from peer ${peerId} has no video tracks`);
             }
             
+            // Получить информацию о пире
+            const peer = peers.get(peerId);
+            // Проверить, есть ли локальное переименование
+            const localName = localPeerNames.get(peerId);
+            
+            // Определить имя для отображения
+            let displayName = 'Participant';
+            if (localName) {
+                displayName = localName;
+            } else if (peer && peer.username) {
+                displayName = peer.username;
+            }
+            
             // Create new video container
             const videoItem = document.createElement('div');
             videoItem.className = 'video-item';
             videoItem.id = `remote-${peerId}`;
+            
+            // Если пир имеет статус "убит", добавить соответствующий класс
+            if (peer && peer.killed) {
+                videoItem.classList.add('killed');
+            }
+            
             videoItem.innerHTML = `
                 <video autoplay playsinline></video>
-                <div class="video-label">Participant</div>
+                <div class="video-label">${displayName}</div>
             `;
             
             const videoElement = videoItem.querySelector('video');
@@ -704,6 +923,127 @@ document.addEventListener('DOMContentLoaded', () => {
     // Leave button click handler
     leaveBtn.addEventListener('click', () => {
         disconnect();
+    });
+    
+    // Обработчик кнопки для включения/выключения статуса "убит"
+    toggleKilledBtn.addEventListener('click', () => {
+        // Инвертировать текущий статус
+        isKilled = !isKilled;
+        
+        // Отправить сообщение на сервер
+        sendMessage({
+            type: 'killed',
+            killed: isKilled
+        });
+        
+        // Обновить кнопку
+        toggleKilledBtn.textContent = isKilled ? 
+            'Восстановить' : 'Отключиться';
+        
+        // Обновить отображение в видео элементе (мгновенный отклик)
+        updateLocalKilledStatus();
+    });
+    
+    // Обработчик кнопки для подтверждения переименования себя
+    confirmRenameBtn.addEventListener('click', () => {
+        const newName = newUsernameInput.value.trim();
+        if (!newName) {
+            showError('Имя не может быть пустым');
+            return;
+        }
+        
+        // Отправить сообщение на сервер
+        sendMessage({
+            type: 'rename',
+            username: newName
+        });
+        
+        // Закрыть модальное окно
+        renameModal.hide();
+    });
+    
+    // Обработчик кнопки для переименования другого пира (локально)
+    renamePeerBtn.addEventListener('click', () => {
+        const peerId = peerSelect.value;
+        const newName = peerNewNameInput.value.trim();
+        
+        if (!peerId) {
+            showError('Пожалуйста, выберите участника');
+            return;
+        }
+        
+        if (!newName) {
+            showError('Имя не может быть пустым');
+            return;
+        }
+        
+        // Отправить сообщение на сервер (для подтверждения)
+        sendMessage({
+            type: 'rename_peer',
+            peerId: peerId,
+            username: newName
+        });
+        
+        // Сохранить локально (немедленный отклик)
+        localPeerNames.set(peerId, newName);
+        
+        // Обновить отображение
+        updatePeerLabel(peerId);
+        updatePeerSelect();
+        
+        // Очистить поля
+        peerNewNameInput.value = '';
+        peerSelect.value = '';
+    });
+    
+    // Обработчик контекстного меню для видео элементов
+    videoContainer.addEventListener('contextmenu', (e) => {
+        // Найти ближайший родительский элемент с классом video-item
+        const videoItem = e.target.closest('.video-item');
+        if (!videoItem) return;
+        
+        // Если это не локальное видео и имеет id
+        if (videoItem !== localVideo && videoItem.id) {
+            // Получить id пира из id элемента (remote-peerId)
+            const peerId = videoItem.id.replace('remote-', '');
+            
+            // Отменить стандартное контекстное меню
+            e.preventDefault();
+            
+            // Сохранить peerId в контекстном меню
+            videoContextMenu.dataset.peerId = peerId;
+            
+            // Позиционировать и показать контекстное меню
+            videoContextMenu.style.top = `${e.pageY}px`;
+            videoContextMenu.style.left = `${e.pageX}px`;
+            videoContextMenu.style.display = 'block';
+        }
+    });
+    
+    // Обработчик клика на переименование в контекстном меню
+    document.querySelector('.rename-peer-action').addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        // Получить peerId из контекстного меню
+        const peerId = videoContextMenu.dataset.peerId;
+        if (!peerId) return;
+        
+        // Скрыть контекстное меню
+        videoContextMenu.style.display = 'none';
+        
+        // Выбрать пира в выпадающем списке
+        peerSelect.value = peerId;
+        
+        // Открыть модальное окно
+        renameModal.show();
+        
+        // Фокус на поле ввода нового имени
+        peerNewNameInput.focus();
+    });
+    
+    // Скрыть контекстное меню при клике вне его
+    document.addEventListener('click', () => {
+        videoContextMenu.style.display = 'none';
     });
 
     // Show error message
