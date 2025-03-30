@@ -1469,26 +1469,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             // Установить значения в форме
-            sidebarVideoQualitySelect.value = preset;
-            sidebarCustomVideoSettings.style.display = 'none';
+            if (sidebarVideoQualitySelect) sidebarVideoQualitySelect.value = preset;
+            if (sidebarCustomVideoSettings) sidebarCustomVideoSettings.style.display = 'none';
             
             // Установить видимые размеры
-            sidebarVideoWidthInput.value = settings.width || videoQualityPresets[preset].width;
-            sidebarVideoHeightInput.value = settings.height || videoQualityPresets[preset].height;
+            if (sidebarVideoWidthInput) sidebarVideoWidthInput.value = settings.width || videoQualityPresets[preset].width;
+            if (sidebarVideoHeightInput) sidebarVideoHeightInput.value = settings.height || videoQualityPresets[preset].height;
             
             // Установить битрейт
             const bitrate = window.customBitrate || videoQualityPresets[preset].bitrate;
-            sidebarVideoBitrateInput.value = bitrate;
+            if (sidebarVideoBitrateInput) sidebarVideoBitrateInput.value = bitrate;
             
-            // Обновить состояние переключателей
-            sidebarToggleVideoBtn.innerHTML = videoEnabled ? 
-                '<span data-feather="video-off"></span> Toggle Video' : 
-                '<span data-feather="video"></span> Toggle Video';
-                
-            sidebarToggleKilledBtn.innerHTML = isKilled ? 
-                '<span data-feather="user"></span> Unmark as Disconnected' : 
-                '<span data-feather="user-x"></span> Mark as Disconnected';
-                
+            // Обновить иконки
             feather.replace();
         }
     }
@@ -1585,19 +1577,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error applying video settings from sidebar:', error);
                 showError(`Failed to apply video settings: ${error.message}`);
             }
-        });
-    }
-    
-    // Синхронизация кнопок с основными
-    if (sidebarToggleVideoBtn && toggleVideoBtn) {
-        sidebarToggleVideoBtn.addEventListener('click', () => {
-            toggleVideoBtn.click();
-        });
-    }
-    
-    if (sidebarToggleKilledBtn && toggleKilledBtn) {
-        sidebarToggleKilledBtn.addEventListener('click', () => {
-            toggleKilledBtn.click();
         });
     }
 

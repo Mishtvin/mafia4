@@ -29,9 +29,9 @@
             </div>
             
             <div class="sidebar-section">
-                <h5>Your Video Settings</h5>
+                <h5>Video Quality Settings</h5>
                 <div class="mb-3">
-                    <label for="sidebar-video-quality" class="form-label">Video Quality</label>
+                    <label for="sidebar-video-quality" class="form-label">Quality Preset</label>
                     <select class="form-select" id="sidebar-video-quality">
                         <option value="low">Low (180p)</option>
                         <option value="medium" selected>Medium (480p)</option>
@@ -56,28 +56,14 @@
                     <input type="number" class="form-control" id="sidebar-video-bitrate" value="1000" min="100" max="8000">
                     <small class="text-muted">Range: 100-8000 kbps</small>
                 </div>
-                <button type="button" class="btn btn-primary w-100" id="apply-sidebar-video-settings-btn">
+                <button type="button" class="btn btn-primary w-100 mb-3" id="apply-sidebar-video-settings-btn">
                     Apply Settings
                 </button>
-                <div class="alert alert-info mt-3">
+                <div class="alert alert-info mb-4">
                     <small>Changing video settings will reconnect your camera. This may cause a brief interruption in your video stream.</small>
                 </div>
-            </div>
-            
-            <hr>
-            
-            <div class="sidebar-section">
-                <h5>Quick Actions</h5>
-                <div class="d-grid gap-2">
-                    <button id="sidebar-toggle-video" class="btn btn-primary">
-                        <span data-feather="video-off"></span> Toggle Video
-                    </button>
-                    <button id="sidebar-toggle-killed" class="btn btn-dark">
-                        <span data-feather="user-x"></span> Toggle Killed
-                    </button>
-                    <button id="sidebar-rename-btn" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#rename-modal">
-                        <span data-feather="edit"></span> Rename
-                    </button>
+                
+                <div class="d-grid mt-4">
                     <button id="sidebar-leave-btn" class="btn btn-danger">
                         <span data-feather="log-out"></span> Leave Conference
                     </button>
