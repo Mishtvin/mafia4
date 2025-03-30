@@ -85,7 +85,7 @@ body {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) rotate(-15deg);
     padding: 5px 10px;
     background-color: black;
     color: #ff0000;
@@ -93,6 +93,8 @@ body {
     font-weight: bold;
     z-index: 10;
     border: 2px solid #ff0000;
+    text-transform: uppercase;
+    letter-spacing: 2px;
 }
 
 /* Полностью скрываем видео для удаленных участников со статусом killed */
