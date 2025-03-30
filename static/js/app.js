@@ -992,24 +992,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (videoElement && peer) {
             if (peer.killed) {
+                // Для удаленных пиров просто добавляем класс killed, 
+                // но не добавляем текст "ВБИТО" - он добавляется через CSS
                 videoElement.classList.add('killed');
-                
-                // Добавить маркер "ВБИТО", если его еще нет
-                let killMark = videoElement.querySelector('.kill-mark');
-                if (!killMark) {
-                    killMark = document.createElement('div');
-                    killMark.className = 'kill-mark';
-                    killMark.textContent = 'ВБИТО';
-                    videoElement.appendChild(killMark);
-                }
             } else {
                 videoElement.classList.remove('killed');
-                
-                // Удалить маркер "ВБИТО", если он есть
-                const killMark = videoElement.querySelector('.kill-mark');
-                if (killMark) {
-                    killMark.remove();
-                }
             }
         }
     }
@@ -1608,9 +1595,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const killButtonHtml = !isHost && userRole === 'host' ? 
                 `<button class="kill-button remote-kill-button" data-peer-id="${peerId}" title="Вбито">💀</button>` : '';
                 
-            // Добавляем маркер ВБИТО, если пир имеет статус убитого
-            const killMarkHtml = peer && peer.killed ? 
-                `<div class="kill-mark">ВБИТО</div>` : '';
+            // Для удаленных участников "ВБИТО" добавляется через CSS оформление,
+            // не добавляем отдельный элемент с надписью - это только для локального видео
+            const killMarkHtml = '';
             
             videoItem.innerHTML = `
                 <video autoplay playsinline></video>
