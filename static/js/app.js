@@ -227,10 +227,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Очистить информацию и инициализировать список пиров
                 peers.clear();
                 localPeerNames.clear();
-                updatePeerSelect();
+                
+                // Закрыть существующие соединения
+                Object.keys(peerConnections).forEach(peerId => {
+                    if (peerConnections[peerId]) {
+                        console.log(`Closing existing connection to ${peerId}`);
+                        peerConnections[peerId].close();
+                        delete peerConnections[peerId];
+                    }
+                });
+                
+                // Очистить видео-контейнер от удаленных видео
+                const remoteVideos = videoContainer.querySelectorAll('[id^="remote-"]');
+                remoteVideos.forEach(video => {
+                    if (video !== localVideo) {
+                        console.log(`Removing video element for ${video.id}`);
+                        video.remove();
+                    }
+                });
                 
                 // Добавить пиров из комнаты и начать соединение
+                console.log(`Received user list: ${message.users.length} users`);
                 message.users.forEach(user => {
+                    console.log(`Processing user from list: ${user.id} (${user.username})`);
+                    
                     // Сохранить информацию о пире
                     if (user.id !== serverId) {
                         peers.set(user.id, {
@@ -238,10 +258,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             username: user.username,
                             killed: user.killed || false
                         });
-                    }
-                    
-                    // Инициировать соединение
-                    if (user.id !== serverId) {
+                        
+                        // Инициировать соединение
                         initiateConnection(user.id);
                     }
                 });
@@ -648,61 +666,103 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const pc = peerConnections[peerId];
             
-            // Check the current connection state to avoid errors
+            // Улучшенная обработка сигнальных состояний для надежного установления соединения
             const currentState = pc.signalingState;
             console.log(`Current signaling state with ${peerId}: ${currentState}`);
             
-            // Only process if it's a valid state transition
-            let canSetRemote = false;
-            
-            if (sdpObj.type === 'offer') {
-                // Can set remote offer if in 'stable' or 'have-remote-offer' state
-                canSetRemote = (currentState === 'stable' || currentState === 'have-remote-offer');
-            } else if (sdpObj.type === 'answer') {
-                // Can only set remote answer if in 'have-local-offer' state
-                canSetRemote = (currentState === 'have-local-offer');
-            }
-            
-            if (!canSetRemote) {
-                console.warn(`Cannot set remote ${sdpObj.type} in current state: ${currentState}`);
-                return;
-            }
-            
+            // Создаем объект SDP описания
             const sdp = new RTCSessionDescription(sdpObj);
             
-            // Set remote description and handle offer/answer
-            console.log(`Setting remote description (${sdpObj.type}) for ${peerId}`);
-            pc.setRemoteDescription(sdp)
-                .then(() => {
-                    console.log(`Remote description set for ${peerId}`);
-                    
-                    // If we received an offer, create and send an answer
-                    if (sdp.type === 'offer') {
-                        console.log(`Creating answer for ${peerId}`);
-                        return pc.createAnswer()
-                            .then(answer => {
-                                console.log(`Setting local description for ${peerId}`);
-                                return pc.setLocalDescription(answer);
-                            })
-                            .then(() => {
-                                console.log(`Sending answer to ${peerId}`);
-                                sendMessage({
-                                    type: 'sdp',
-                                    id: peerId,
-                                    sdp: pc.localDescription
-                                });
+            // Обработка предложения (offer)
+            if (sdp.type === 'offer') {
+                // Если пришел offer, но мы уже отправили свой offer (одновременно)
+                if (currentState === 'have-local-offer') {
+                    // Разрешаем конфликт на основе ID (более низкий ID уступает более высокому)
+                    if (serverId < peerId) {
+                        console.log(`SDP conflict detected with ${peerId}. We have lower ID, rolling back our offer...`);
+                        
+                        // Откатываемся и принимаем входящий offer
+                        pc.setLocalDescription({type: 'rollback'})
+                        .then(() => {
+                            console.log(`Rolled back local offer, setting remote offer from ${peerId}`);
+                            return pc.setRemoteDescription(sdp);
+                        })
+                        .then(() => {
+                            console.log(`Creating answer for ${peerId} after rollback`);
+                            return pc.createAnswer();
+                        })
+                        .then(answer => {
+                            console.log(`Setting local description (answer) for ${peerId}`);
+                            return pc.setLocalDescription(answer);
+                        })
+                        .then(() => {
+                            console.log(`Sending answer to ${peerId} after rollback`);
+                            sendMessage({
+                                type: 'sdp',
+                                id: peerId,
+                                sdp: pc.localDescription
                             });
+                        })
+                        .catch(error => {
+                            console.error(`Error during rollback process with ${peerId}:`, error);
+                        });
                     } else {
-                        console.log(`Successfully processed answer from ${peerId}`);
+                        console.log(`SDP conflict detected with ${peerId}. We have higher ID, ignoring their offer.`);
+                        // Просто игнорируем их offer, они должны откатиться и принять наш
                     }
-                })
-                .catch(error => {
-                    console.error(`Error handling SDP (${sdpObj.type}) for ${peerId}:`, error);
-                    // Don't show error to user for every SDP issue, only if critical
-                    if (pc.iceConnectionState !== 'connected' && pc.connectionState !== 'connected') {
-                        showError('Failed to establish connection with a participant.');
-                    }
-                });
+                    return;
+                } 
+                // Нормальная обработка offer в стабильном состоянии
+                else if (currentState === 'stable') {
+                    console.log(`Setting remote offer from ${peerId} in stable state`);
+                    
+                    pc.setRemoteDescription(sdp)
+                    .then(() => {
+                        console.log(`Remote description set for ${peerId}, creating answer`);
+                        return pc.createAnswer();
+                    })
+                    .then(answer => {
+                        console.log(`Setting local description (answer) for ${peerId}`);
+                        return pc.setLocalDescription(answer);
+                    })
+                    .then(() => {
+                        console.log(`Sending answer to ${peerId}`);
+                        sendMessage({
+                            type: 'sdp',
+                            id: peerId,
+                            sdp: pc.localDescription
+                        });
+                    })
+                    .catch(error => {
+                        console.error(`Error processing offer from ${peerId}:`, error);
+                        // Показываем ошибку только если соединение не установлено
+                        if (pc.connectionState !== 'connected') {
+                            showError(`Не удалось установить соединение с участником.`);
+                        }
+                    });
+                } else {
+                    console.warn(`Cannot process offer from ${peerId} in current state: ${currentState}`);
+                }
+            } 
+            // Обработка ответа (answer)
+            else if (sdp.type === 'answer') {
+                // Можно установить answer только если у нас есть локальный offer
+                if (currentState === 'have-local-offer') {
+                    console.log(`Setting remote answer from ${peerId}`);
+                    
+                    pc.setRemoteDescription(sdp)
+                    .then(() => {
+                        console.log(`Successfully set remote answer from ${peerId}`);
+                    })
+                    .catch(error => {
+                        console.error(`Error setting remote answer from ${peerId}:`, error);
+                    });
+                } else {
+                    console.warn(`Cannot set remote answer from ${peerId} in state: ${currentState}`);
+                }
+            } else {
+                console.warn(`Received unknown SDP type: ${sdp.type} from ${peerId}`);
+            }
         } catch (error) {
             console.error('Exception in handleSDP:', error);
             showError('An error occurred while processing the connection.');

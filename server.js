@@ -250,22 +250,31 @@ function handleJoin(clientId, message) {
     
     const room = rooms.get(roomName);
     
-    // Add to room
-    room.participants.push(clientId);
+    // Add to room - проверяем, не было ли уже этого участника в комнате
+    if (!room.participants.includes(clientId)) {
+        room.participants.push(clientId);
+    }
+    
+    // Собираем полный список участников, исключая текущего клиента
+    const otherParticipants = room.participants
+        .filter(id => id !== clientId)
+        .map(id => {
+            const participant = clients.get(id);
+            if (!participant) return null;
+            return {
+                id: id,
+                username: participant.username,
+                killed: participant.killed
+            };
+        })
+        .filter(p => p !== null);
     
     // Notify client they've joined
     sendToClient(client.ws, {
         type: 'joined',
         id: clientId,
         room: roomName,
-        users: room.participants.map(id => {
-            const participant = clients.get(id);
-            return {
-                id: id,
-                username: participant ? participant.username : 'Unknown',
-                killed: participant ? participant.killed : false
-            };
-        })
+        users: otherParticipants
     });
     
     // Notify others
@@ -277,8 +286,17 @@ function handleJoin(clientId, message) {
         killed: client.killed
     }, clientId);
     
+    // Логирование активных соединений для отладки
     console.log(`Client ${clientId} (${username}) joined room: ${roomName}`);
-    console.log(`Room ${roomName} now has ${room.participants.length} participants`);
+    console.log(`Room ${roomName} now has ${room.participants.length} participants:`);
+    room.participants.forEach(id => {
+        const p = clients.get(id);
+        if (p) {
+            console.log(`- ${id} (${p.username})`);
+        } else {
+            console.log(`- ${id} (unknown/disconnected)`);
+        }
+    });
 }
 
 // Forward ICE candidate to recipient
