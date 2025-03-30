@@ -104,8 +104,41 @@ body {
 #video-context-menu {
     min-width: 200px;
     z-index: 1000;
+    position: absolute;
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    border-radius: 4px;
+    display: none;
+}
+
+#video-context-menu.show {
+    display: block;
+}
+
+.dropdown-item {
+    display: block;
+    padding: 8px 16px;
+    color: #212529;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
 }
 
 .dropdown-item span {
     margin-right: 8px;
+}
+
+/* Video settings modal styling */
+#custom-video-settings, #peer-custom-video-settings {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+#peer-bitrate-value {
+    font-weight: bold;
 }
