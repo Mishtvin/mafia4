@@ -1094,6 +1094,12 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 videoElement.classList.remove('killed');
             }
+            
+            // Обновляем значок у кнопки (череп/ангел) в зависимости от статуса
+            const killButton = videoElement.querySelector('.remote-kill-button');
+            if (killButton) {
+                killButton.innerHTML = peer.killed ? '👼' : '💀';
+            }
         }
     }
     
@@ -1754,8 +1760,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Добавляем кнопку убито только для игроков (не для ведущих)
             // и только если текущий пользователь - ведущий
+            const isKilled = peer && peer.killed;
             const killButtonHtml = !isHost && userRole === 'host' ? 
-                `<button class="kill-button remote-kill-button" data-peer-id="${peerId}" title="Вбито">👼</button>` : '';
+                `<button class="kill-button remote-kill-button" data-peer-id="${peerId}" title="Вбито">${isKilled ? '👼' : '💀'}</button>` : '';
                 
             // Для удаленных участников "ВБИТО" добавляется через CSS оформление,
             // не добавляем отдельный элемент с надписью - это только для локального видео
