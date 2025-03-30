@@ -2188,7 +2188,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000); // Время показа анимации в центре
     }
     
-    // Обработчик клика на кнопку "Балаган"
+    // Обработчик клика на кнопку "Балаган" (1 минута)
     if (balaganBtn) {
         balaganBtn.addEventListener('click', () => {
             if (userRole !== 'host') {
@@ -2206,6 +2206,50 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Локально запускаем таймер для немедленной обратной связи
             startTimer(60);
+        });
+    }
+    
+    // Обработчик клика на кнопку "Балаган" (30 секунд)
+    const balagan30SecBtn = document.getElementById('balagan-30sec-btn');
+    if (balagan30SecBtn) {
+        balagan30SecBtn.addEventListener('click', () => {
+            if (userRole !== 'host') {
+                showError('Тільки ведучий може використовувати кнопку "Балаган"');
+                return;
+            }
+            
+            console.log('Host is starting a 30-second timer (Балаган)');
+            
+            // Отправляем сообщение о начале "Балагана" всем участникам
+            sendMessage({
+                type: 'balagan',
+                duration: 30 // 30 секунд
+            });
+            
+            // Локально запускаем таймер для немедленной обратной связи
+            startTimer(30);
+        });
+    }
+    
+    // Обработчик клика на кнопку "Балаган" (15 секунд)
+    const balagan15SecBtn = document.getElementById('balagan-15sec-btn');
+    if (balagan15SecBtn) {
+        balagan15SecBtn.addEventListener('click', () => {
+            if (userRole !== 'host') {
+                showError('Тільки ведучий може використовувати кнопку "Балаган"');
+                return;
+            }
+            
+            console.log('Host is starting a 15-second timer (Балаган)');
+            
+            // Отправляем сообщение о начале "Балагана" всем участникам
+            sendMessage({
+                type: 'balagan',
+                duration: 15 // 15 секунд
+            });
+            
+            // Локально запускаем таймер для немедленной обратной связи
+            startTimer(15);
         });
     }
     
