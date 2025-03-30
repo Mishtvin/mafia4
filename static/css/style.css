@@ -6,13 +6,14 @@ body {
 
 .video-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(3, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
     gap: 15px;
     width: 100%;
     height: calc(100vh - 50px); /* Уменьшаем высоту на 50px для отступа под таймер */
     padding: 15px;
     margin-top: 50px; /* Добавляем отступ сверху для таймера */
+    box-sizing: border-box;
 }
 
 /* Стили для таймера */
@@ -40,10 +41,14 @@ body {
     aspect-ratio: 16/9;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     width: 100%;
-    height: 100%;
+    height: 0;
+    padding-bottom: 56.25%; /* Соотношение сторон 16:9 (9/16 = 0.5625 или 56.25%) */
 }
 
 .video-item video {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     object-fit: contain;
