@@ -10,65 +10,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- Sidebar Toggle Button -->
-        <button id="sidebar-toggle" class="btn sidebar-toggle-btn" style="display: none;">
-            <span data-feather="settings"></span>
-        </button>
-        
-        <!-- Video Controls Sidebar -->
-        <div id="control-sidebar" class="control-sidebar">
-            <div class="sidebar-header">
-                <h4>Налаштування конференції</h4>
-                <button id="close-sidebar" class="btn-close text-light"></button>
-            </div>
-            
-            <div class="sidebar-section">
-                <h5>Керування камерою</h5>
-                <p class="text-secondary mb-3">Налаштування відеозв'язку</p>
-                <div class="mb-3">
-                    <label for="sidebar-video-quality" class="form-label">Оберіть камеру</label>
-                    <select class="form-select" id="sidebar-video-quality">
-                        <option value="low">Вбудована камера</option>
-                        <option value="medium" selected>USB WebCam</option>
-                        <option value="custom">Інше</option>
-                    </select>
-                </div>
-                <div id="sidebar-custom-video-settings" class="mb-3" style="display: none;">
-                    <div class="mb-3">
-                        <label for="sidebar-video-width" class="form-label">Ширина</label>
-                        <input type="number" class="form-control" id="sidebar-video-width" value="640">
-                    </div>
-                    <div class="mb-3">
-                        <label for="sidebar-video-height" class="form-label">Висота</label>
-                        <input type="number" class="form-control" id="sidebar-video-height" value="480">
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label for="sidebar-video-bitrate" class="form-label">Якість (kbps)</label>
-                    <input type="number" class="form-control" id="sidebar-video-bitrate" value="1000" min="100" max="8000">
-                    <small class="text-muted">Діапазон: 100-8000 kbps</small>
-                </div>
-                <button type="button" class="btn action-btn-danger" id="sidebar-toggle-video">
-                    <span data-feather="video-off"></span> Вимкнути камеру
-                </button>
-                <button type="button" class="btn btn-primary w-100 mt-3" id="apply-sidebar-video-settings-btn">
-                    Оновити з'єднання
-                </button>
-            </div>
-            
-            <div class="sidebar-section">
-                <h5>Статус</h5>
-                <p class="text-secondary mb-3">Керування вашим станом у конференції</p>
-                <button id="sidebar-toggle-killed" class="btn action-btn-danger">
-                    <span data-feather="user-x"></span> Мене вбито
-                </button>
-                <div class="d-flex justify-content-center my-3">
-                    <button id="leave-btn" class="btn btn-outline-light">
-                        <span data-feather="log-out"></span> Покинути конференцію
-                    </button>
-                </div>
-            </div>
-        </div>
 
         <!-- Login Section -->
         <div id="login-section" class="row justify-content-center mb-4 align-items-center" style="min-height: 90vh;">
@@ -88,10 +29,8 @@
                                 <label for="username" class="form-label">Ваше ім'я</label>
                                 <input type="text" class="form-control" id="username" required>
                             </div>
-                            <div class="mb-3">
-                                <label for="roomname" class="form-label">Назва кімнати</label>
-                                <input type="text" class="form-control" id="roomname" value="default" required>
-                            </div>
+                            <!-- Скрытое поле для комнаты, всегда будет "default" -->
+                            <input type="hidden" id="roomname" value="default">
                             <div class="mb-3 form-check">
                                 <input type="checkbox" class="form-check-input" id="video-enabled" checked>
                                 <label class="form-check-label" for="video-enabled">Увімкнути відео</label>
@@ -129,6 +68,66 @@
 
         <!-- Conference Section -->
         <div id="conference-section" class="row" style="display: none;">
+            <!-- Sidebar Toggle Button -->
+            <button id="sidebar-toggle" class="btn sidebar-toggle-btn" style="display: none;">
+                <span data-feather="settings"></span>
+            </button>
+            
+            <!-- Video Controls Sidebar -->
+            <div id="control-sidebar" class="control-sidebar">
+                <div class="sidebar-header">
+                    <h4>Налаштування конференції</h4>
+                    <button id="close-sidebar" class="btn-close text-light"></button>
+                </div>
+                
+                <div class="sidebar-section">
+                    <h5>Керування камерою</h5>
+                    <p class="text-secondary mb-3">Налаштування відеозв'язку</p>
+                    <div class="mb-3">
+                        <label for="sidebar-video-quality" class="form-label">Оберіть камеру</label>
+                        <select class="form-select" id="sidebar-video-quality">
+                            <option value="low">Вбудована камера</option>
+                            <option value="medium" selected>USB WebCam</option>
+                            <option value="custom">Інше</option>
+                        </select>
+                    </div>
+                    <div id="sidebar-custom-video-settings" class="mb-3" style="display: none;">
+                        <div class="mb-3">
+                            <label for="sidebar-video-width" class="form-label">Ширина</label>
+                            <input type="number" class="form-control" id="sidebar-video-width" value="640">
+                        </div>
+                        <div class="mb-3">
+                            <label for="sidebar-video-height" class="form-label">Висота</label>
+                            <input type="number" class="form-control" id="sidebar-video-height" value="480">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="sidebar-video-bitrate" class="form-label">Якість (kbps)</label>
+                        <input type="number" class="form-control" id="sidebar-video-bitrate" value="1000" min="100" max="8000">
+                        <small class="text-muted">Діапазон: 100-8000 kbps</small>
+                    </div>
+                    <button type="button" class="btn action-btn-danger" id="sidebar-toggle-video">
+                        <span data-feather="video-off"></span> Вимкнути камеру
+                    </button>
+                    <button type="button" class="btn btn-primary w-100 mt-3" id="apply-sidebar-video-settings-btn">
+                        Оновити з'єднання
+                    </button>
+                </div>
+                
+                <div class="sidebar-section">
+                    <h5>Статус</h5>
+                    <p class="text-secondary mb-3">Керування вашим станом у конференції</p>
+                    <button id="sidebar-toggle-killed" class="btn action-btn-danger">
+                        <span data-feather="user-x"></span> Мене вбито
+                    </button>
+                    <div class="d-flex justify-content-center my-3">
+                        <button id="sidebar-leave-btn" class="btn btn-outline-light">
+                            <span data-feather="log-out"></span> Покинути конференцію
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
             <div class="col-12">
                 <div id="video-container" class="video-grid"></div>
             </div>

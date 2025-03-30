@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const applySidebarVideoSettingsBtn = document.getElementById('apply-sidebar-video-settings-btn');
     const sidebarToggleVideoBtn = document.getElementById('sidebar-toggle-video');
     const sidebarToggleKilledBtn = document.getElementById('sidebar-toggle-killed');
-    const sidebarRenameBtn = document.getElementById('sidebar-rename-btn');
+    const sidebarLeaveBtn = document.getElementById('sidebar-leave-btn');
 
     // WebRTC and Galène variables
     let socket = null;
@@ -1569,9 +1569,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Leave button click handler
-    leaveBtn.addEventListener('click', () => {
-        disconnect();
-    });
+    // Обработчик кнопки отключения
+    if (leaveBtn) {
+        leaveBtn.addEventListener('click', () => {
+            disconnect();
+        });
+    }
+    
+    // Обработчик кнопки отключения в сайдбаре
+    if (sidebarLeaveBtn) {
+        sidebarLeaveBtn.addEventListener('click', () => {
+            disconnect();
+        });
+    }
     
     // Обработчик кнопки для включения/выключения статуса "убит"
     toggleKilledBtn.addEventListener('click', () => {
