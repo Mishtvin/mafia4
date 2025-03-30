@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,169 +10,177 @@
 </head>
 <body>
     <div class="container">
-
-        <!-- Login Section -->
-        <div id="login-section" class="row justify-content-center mb-4 align-items-center" style="min-height: 90vh;">
-            <div class="d-flex justify-content-end mb-2 px-3">
-                <button id="theme-toggle-btn-login" class="btn btn-outline-secondary rounded-circle p-2 me-2">
-                    <span data-feather="moon"></span>
-                </button>
+        <div class="row mt-4">
+            <div class="col-12">
+                <h1 class="text-center mb-4">Video Conference</h1>
             </div>
-            <div class="col-md-6 text-center">
-                <div class="mb-5">
-                    <div class="d-inline-block p-4 bg-dark rounded-circle mb-3">
-                        <span data-feather="video" style="width: 60px; height: 60px; color: var(--primary-color);"></span>
+        </div>
+        
+        <!-- Sidebar Toggle Button -->
+        <button id="sidebar-toggle" class="btn btn-primary sidebar-toggle-btn" style="display: none;">
+            <span data-feather="settings"></span>
+        </button>
+        
+        <!-- Video Controls Sidebar -->
+        <div id="control-sidebar" class="control-sidebar">
+            <div class="sidebar-header">
+                <h4>Video Controls</h4>
+                <button id="close-sidebar" class="btn-close"></button>
+            </div>
+            
+            <div class="sidebar-section">
+                <h5>Your Video Settings</h5>
+                <div class="mb-3">
+                    <label for="sidebar-video-quality" class="form-label">Video Quality</label>
+                    <select class="form-select" id="sidebar-video-quality">
+                        <option value="low">Low (180p)</option>
+                        <option value="medium" selected>Medium (480p)</option>
+                        <option value="high">High (720p)</option>
+                        <option value="hd">HD (1080p)</option>
+                        <option value="uhd">4K (2160p)</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+                <div id="sidebar-custom-video-settings" class="mb-3" style="display: none;">
+                    <div class="mb-3">
+                        <label for="sidebar-video-width" class="form-label">Width</label>
+                        <input type="number" class="form-control" id="sidebar-video-width" value="640">
+                    </div>
+                    <div class="mb-3">
+                        <label for="sidebar-video-height" class="form-label">Height</label>
+                        <input type="number" class="form-control" id="sidebar-video-height" value="480">
                     </div>
                 </div>
-                
-                <form id="join-form" class="text-center">
-                    <button type="submit" class="btn join-btn px-5 py-3">Приєднатися</button>
-                    
-                    <div class="card mt-5">
-                        <div class="card-body">
+                <div class="mb-3">
+                    <label for="sidebar-video-bitrate" class="form-label">Bitrate (kbps)</label>
+                    <input type="number" class="form-control" id="sidebar-video-bitrate" value="1000" min="100" max="8000">
+                    <small class="text-muted">Range: 100-8000 kbps</small>
+                </div>
+                <button type="button" class="btn btn-primary w-100" id="apply-sidebar-video-settings-btn">
+                    Apply Settings
+                </button>
+                <div class="alert alert-info mt-3">
+                    <small>Changing video settings will reconnect your camera. This may cause a brief interruption in your video stream.</small>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="sidebar-section">
+                <h5>Quick Actions</h5>
+                <div class="d-grid gap-2">
+                    <button id="sidebar-toggle-video" class="btn btn-primary">
+                        <span data-feather="video-off"></span> Toggle Video
+                    </button>
+                    <button id="sidebar-toggle-killed" class="btn btn-warning">
+                        <span data-feather="user-x"></span> Toggle Killed
+                    </button>
+                    <button id="sidebar-rename-btn" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#rename-modal">
+                        <span data-feather="edit"></span> Rename
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Section -->
+        <div id="login-section" class="row justify-content-center mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        Join a Conference
+                    </div>
+                    <div class="card-body">
+                        <form id="join-form">
                             <div class="mb-3">
-                                <label for="username" class="form-label">Ваше ім'я</label>
+                                <label for="username" class="form-label">Your Name</label>
                                 <input type="text" class="form-control" id="username" required>
                             </div>
-                            <!-- Скрытое поле для комнаты, всегда будет "default" -->
-                            <input type="hidden" id="roomname" value="default">
+                            <div class="mb-3">
+                                <label for="roomname" class="form-label">Room Name</label>
+                                <input type="text" class="form-control" id="roomname" value="default" required>
+                            </div>
                             <div class="mb-3 form-check">
                                 <input type="checkbox" class="form-check-input" id="video-enabled" checked>
-                                <label class="form-check-label" for="video-enabled">Увімкнути відео</label>
+                                <label class="form-check-label" for="video-enabled">Enable Video</label>
                             </div>
                             <div class="mb-3">
-                                <label for="video-quality" class="form-label">Якість відео</label>
+                                <label for="video-quality" class="form-label">Video Quality</label>
                                 <select class="form-select" id="video-quality">
-                                    <option value="low">Низька (180p)</option>
-                                    <option value="medium" selected>Середня (480p)</option>
-                                    <option value="high">Висока (720p)</option>
+                                    <option value="low">Low (180p)</option>
+                                    <option value="medium" selected>Medium (480p)</option>
+                                    <option value="high">High (720p)</option>
                                     <option value="hd">HD (1080p)</option>
                                     <option value="uhd">4K (2160p)</option>
-                                    <option value="custom">Індивідуальна</option>
+                                    <option value="custom">Custom</option>
                                 </select>
                             </div>
                             <div id="custom-video-settings" class="mb-3" style="display: none;">
                                 <div class="mb-3">
-                                    <label for="video-width" class="form-label">Ширина</label>
+                                    <label for="video-width" class="form-label">Width</label>
                                     <input type="number" class="form-control" id="video-width" value="640">
                                 </div>
                                 <div class="mb-3">
-                                    <label for="video-height" class="form-label">Висота</label>
+                                    <label for="video-height" class="form-label">Height</label>
                                     <input type="number" class="form-control" id="video-height" value="480">
                                 </div>
                                 <div class="mb-3">
-                                    <label for="video-bitrate" class="form-label">Бітрейт (kbps)</label>
+                                    <label for="video-bitrate" class="form-label">Bitrate (kbps)</label>
                                     <input type="number" class="form-control" id="video-bitrate" value="1000">
                                 </div>
                             </div>
-                        </div>
+                            <button type="submit" class="btn btn-primary w-100">Join Conference</button>
+                        </form>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
 
         <!-- Conference Section -->
         <div id="conference-section" class="row" style="display: none;">
-            <!-- Top Controls -->
-            <div class="d-flex justify-content-end mb-2">
-                <button id="theme-toggle-btn" class="btn btn-outline-secondary rounded-circle p-2 me-2">
-                    <span data-feather="moon"></span>
-                </button>
-                <!-- Sidebar Toggle Button -->
-                <button id="sidebar-toggle" class="btn sidebar-toggle-btn" style="display: none;">
-                    <span data-feather="settings"></span>
-                </button>
-            </div>
-            
-            <!-- Video Controls Sidebar -->
-            <div id="control-sidebar" class="control-sidebar">
-                <div class="sidebar-header">
-                    <h4>Налаштування конференції</h4>
-                    <button id="close-sidebar" class="btn-close text-light"></button>
-                </div>
-                
-                <div class="sidebar-section">
-                    <h5>Керування камерою</h5>
-                    <p class="text-secondary mb-3">Налаштування відеозв'язку</p>
-                    <div class="mb-3">
-                        <label for="sidebar-video-quality" class="form-label">Оберіть камеру</label>
-                        <select class="form-select" id="sidebar-video-quality">
-                            <option value="low">Вбудована камера</option>
-                            <option value="medium" selected>USB WebCam</option>
-                            <option value="custom">Інше</option>
-                        </select>
-                    </div>
-                    <div id="sidebar-custom-video-settings" class="mb-3" style="display: none;">
-                        <div class="mb-3">
-                            <label for="sidebar-video-width" class="form-label">Ширина</label>
-                            <input type="number" class="form-control" id="sidebar-video-width" value="640">
-                        </div>
-                        <div class="mb-3">
-                            <label for="sidebar-video-height" class="form-label">Висота</label>
-                            <input type="number" class="form-control" id="sidebar-video-height" value="480">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="sidebar-video-bitrate" class="form-label">Якість (kbps)</label>
-                        <input type="number" class="form-control" id="sidebar-video-bitrate" value="1000" min="100" max="8000">
-                        <small class="text-muted">Діапазон: 100-8000 kbps</small>
-                    </div>
-                    <button type="button" class="btn action-btn-danger" id="sidebar-toggle-video">
-                        <span data-feather="video-off"></span> Вимкнути камеру
-                    </button>
-                    <button type="button" class="btn btn-primary w-100 mt-3" id="apply-sidebar-video-settings-btn">
-                        Оновити з'єднання
-                    </button>
-                </div>
-                
-                <div class="sidebar-section">
-                    <h5>Статус</h5>
-                    <p class="text-secondary mb-3">Керування вашим станом у конференції</p>
-                    <button id="sidebar-toggle-killed" class="btn action-btn-danger">
-                        <span data-feather="user-x"></span> Мене вбито
-                    </button>
-                    <div class="d-flex justify-content-center my-3">
-                        <button id="sidebar-leave-btn" class="btn btn-outline-light">
-                            <span data-feather="log-out"></span> Покинути конференцію
+            <div class="col-12 mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 id="room-title">Room: <span id="current-room">default</span></h3>
+                    <div>
+                        <button id="leave-btn" class="btn btn-danger">
+                            <span data-feather="log-out"></span> Leave
                         </button>
                     </div>
                 </div>
             </div>
-            
             <div class="col-12">
                 <div id="video-container" class="video-grid"></div>
             </div>
-            
-            <!-- Rename Input Modal for Individual Video -->
-            <div class="modal fade" id="rename-input-modal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-body p-4">
-                            <div class="mb-3">
-                                <input type="text" class="form-control form-control-lg" id="rename-input" placeholder="You (Local)">
-                            </div>
-                            <div class="text-end">
-                                <button type="button" class="btn btn-primary px-4" id="rename-input-ok">OK</button>
-                            </div>
-                        </div>
-                    </div>
+            <div class="col-12 mt-3">
+                <div class="button-controls text-center">
+                    <button id="toggle-video" class="btn btn-primary me-2">
+                        <span data-feather="video-off"></span> Toggle Video
+                    </button>
+                    <button id="toggle-killed" class="btn btn-warning me-2">
+                        <span data-feather="user-x"></span> Toggle Killed
+                    </button>
+                    <button id="rename-btn" class="btn btn-info me-2" data-bs-toggle="modal" data-bs-target="#rename-modal">
+                        <span data-feather="edit"></span> Rename
+                    </button>
+                    <button id="local-video-settings-btn" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#local-video-settings-modal">
+                        <span data-feather="settings"></span> Video Settings
+                    </button>
                 </div>
             </div>
         </div>
 
         <!-- Error Modal -->
         <div class="modal fade" id="error-modal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-dialog">
                 <div class="modal-content">
-                    <div class="modal-header border-0">
-                        <h5 class="modal-title text-danger">Помилка</h5>
-                        <button type="button" class="btn-close text-light" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="modal-header">
+                        <h5 class="modal-title">Error</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <p id="error-message"></p>
                     </div>
-                    <div class="modal-footer border-0">
-                        <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">Закрити</button>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>
@@ -180,38 +188,38 @@
         
         <!-- Rename Modal -->
         <div class="modal fade" id="rename-modal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-dialog">
                 <div class="modal-content">
-                    <div class="modal-header border-0">
-                        <h5 class="modal-title">Змінити ім'я</h5>
-                        <button type="button" class="btn-close text-light" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="modal-header">
+                        <h5 class="modal-title">Change Name</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="new-username" class="form-label">Нове ім'я:</label>
+                            <label for="new-username" class="form-label">New Name:</label>
                             <input type="text" class="form-control" id="new-username" required>
                         </div>
                         <div id="rename-peer-section" style="display: none;">
                             <hr>
-                            <h6>Перейменувати іншого учасника (тільки ви будете бачити нове ім'я)</h6>
+                            <h6>Rename Other Participant (only visible to you)</h6>
                             <div class="mb-3">
-                                <label for="peer-select" class="form-label">Виберіть учасника:</label>
+                                <label for="peer-select" class="form-label">Select Participant:</label>
                                 <select class="form-select" id="peer-select">
-                                    <option value="">-- Виберіть учасника --</option>
+                                    <option value="">-- Select Participant --</option>
                                 </select>
                             </div>
                             <div class="mb-3">
-                                <label for="peer-new-name" class="form-label">Нове ім'я (тільки ви будете бачити):</label>
+                                <label for="peer-new-name" class="form-label">New Name (only you will see this):</label>
                                 <input type="text" class="form-control" id="peer-new-name">
                             </div>
-                            <button type="button" class="btn btn-primary" id="rename-peer-btn">
-                                Перейменувати учасника
+                            <button type="button" class="btn btn-info" id="rename-peer-btn">
+                                Rename Participant
                             </button>
                         </div>
                     </div>
-                    <div class="modal-footer border-0">
-                        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Скасувати</button>
-                        <button type="button" class="btn btn-primary" id="confirm-rename-btn">Зберегти</button>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="confirm-rename-btn">Save Changes</button>
                     </div>
                 </div>
             </div>
@@ -220,52 +228,52 @@
         <!-- Context Menu for Remote Videos -->
         <div id="video-context-menu" class="dropdown-menu">
             <a class="dropdown-item rename-peer-action" href="#">
-                <span data-feather="edit"></span> Перейменувати (тільки для вас)
+                <span data-feather="edit"></span> Rename (only for you)
             </a>
             <a class="dropdown-item video-settings-action" href="#" data-bs-toggle="modal" data-bs-target="#video-settings-modal">
-                <span data-feather="settings"></span> Налаштування відео
+                <span data-feather="settings"></span> Video Settings
             </a>
         </div>
 
         <!-- Remote Video Settings Modal -->
         <div class="modal fade" id="video-settings-modal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-dialog">
                 <div class="modal-content">
-                    <div class="modal-header border-0">
-                        <h5 class="modal-title">Налаштування відео для <span id="video-settings-peer-name">учасника</span></h5>
-                        <button type="button" class="btn-close text-light" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="modal-header">
+                        <h5 class="modal-title">Video Settings for <span id="video-settings-peer-name">Participant</span></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="peer-video-quality" class="form-label">Якість відео</label>
+                            <label for="peer-video-quality" class="form-label">Video Quality</label>
                             <select class="form-select" id="peer-video-quality">
-                                <option value="low">Низька (180p)</option>
-                                <option value="medium" selected>Середня (480p)</option>
-                                <option value="high">Висока (720p)</option>
+                                <option value="low">Low (180p)</option>
+                                <option value="medium" selected>Medium (480p)</option>
+                                <option value="high">High (720p)</option>
                                 <option value="hd">HD (1080p)</option>
                                 <option value="uhd">4K (2160p)</option>
-                                <option value="custom">Індивідуальна</option>
+                                <option value="custom">Custom</option>
                             </select>
                         </div>
                         <div id="peer-custom-video-settings" class="mb-3" style="display: none;">
                             <div class="mb-3">
-                                <label for="peer-video-width" class="form-label">Ширина</label>
+                                <label for="peer-video-width" class="form-label">Width</label>
                                 <input type="number" class="form-control" id="peer-video-width" value="640">
                             </div>
                             <div class="mb-3">
-                                <label for="peer-video-height" class="form-label">Висота</label>
+                                <label for="peer-video-height" class="form-label">Height</label>
                                 <input type="number" class="form-control" id="peer-video-height" value="480">
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label for="peer-video-bitrate" class="form-label">Бітрейт (kbps)</label>
+                            <label for="peer-video-bitrate" class="form-label">Bitrate (kbps)</label>
                             <input type="number" class="form-control" id="peer-video-bitrate" value="1000" min="100" max="8000">
-                            <small class="text-muted">Діапазон: 100-8000 kbps</small>
+                            <small class="text-muted">Range: 100-8000 kbps</small>
                         </div>
                     </div>
-                    <div class="modal-footer border-0">
-                        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Скасувати</button>
-                        <button type="button" class="btn btn-primary" id="apply-video-settings-btn">Застосувати</button>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="apply-video-settings-btn">Apply Settings</button>
                     </div>
                 </div>
             </div>
@@ -273,46 +281,46 @@
         
         <!-- Local Video Settings Modal -->
         <div class="modal fade" id="local-video-settings-modal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-dialog">
                 <div class="modal-content">
-                    <div class="modal-header border-0">
-                        <h5 class="modal-title">Ваші налаштування відео</h5>
-                        <button type="button" class="btn-close text-light" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="modal-header">
+                        <h5 class="modal-title">Your Video Settings</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="local-video-quality" class="form-label">Якість відео</label>
+                            <label for="local-video-quality" class="form-label">Video Quality</label>
                             <select class="form-select" id="local-video-quality">
-                                <option value="low">Низька (180p)</option>
-                                <option value="medium" selected>Середня (480p)</option>
-                                <option value="high">Висока (720p)</option>
+                                <option value="low">Low (180p)</option>
+                                <option value="medium" selected>Medium (480p)</option>
+                                <option value="high">High (720p)</option>
                                 <option value="hd">HD (1080p)</option>
                                 <option value="uhd">4K (2160p)</option>
-                                <option value="custom">Індивідуальна</option>
+                                <option value="custom">Custom</option>
                             </select>
                         </div>
                         <div id="local-custom-video-settings" class="mb-3" style="display: none;">
                             <div class="mb-3">
-                                <label for="local-video-width" class="form-label">Ширина</label>
+                                <label for="local-video-width" class="form-label">Width</label>
                                 <input type="number" class="form-control" id="local-video-width" value="640">
                             </div>
                             <div class="mb-3">
-                                <label for="local-video-height" class="form-label">Висота</label>
+                                <label for="local-video-height" class="form-label">Height</label>
                                 <input type="number" class="form-control" id="local-video-height" value="480">
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label for="local-video-bitrate" class="form-label">Бітрейт (kbps)</label>
+                            <label for="local-video-bitrate" class="form-label">Bitrate (kbps)</label>
                             <input type="number" class="form-control" id="local-video-bitrate" value="1000" min="100" max="8000">
-                            <small class="text-muted">Діапазон: 100-8000 kbps</small>
+                            <small class="text-muted">Range: 100-8000 kbps</small>
                         </div>
                         <div class="alert alert-info">
-                            <small>Зміна налаштувань відео перепідключить вашу камеру. Це може викликати короткочасне переривання відеопотоку.</small>
+                            <small>Changing video settings will reconnect your camera. This may cause a brief interruption in your video stream.</small>
                         </div>
                     </div>
-                    <div class="modal-footer border-0">
-                        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Скасувати</button>
-                        <button type="button" class="btn btn-primary" id="apply-local-video-settings-btn">Застосувати</button>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="apply-local-video-settings-btn">Apply Settings</button>
                     </div>
                 </div>
             </div>
@@ -321,7 +329,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-    <script src="/js/theme-toggle.js"></script>
     <script src="/js/app.js"></script>
 </body>
 </html>

@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const applySidebarVideoSettingsBtn = document.getElementById('apply-sidebar-video-settings-btn');
     const sidebarToggleVideoBtn = document.getElementById('sidebar-toggle-video');
     const sidebarToggleKilledBtn = document.getElementById('sidebar-toggle-killed');
-    const sidebarLeaveBtn = document.getElementById('sidebar-leave-btn');
+    const sidebarRenameBtn = document.getElementById('sidebar-rename-btn');
 
     // WebRTC and Galène variables
     let socket = null;
@@ -595,15 +595,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 serverId = message.id;
                 loginSection.style.display = 'none';
                 conferenceSection.style.display = 'block';
-                // Установить название комнаты, если элемент существует
-                if (currentRoomSpan) {
-                    currentRoomSpan.textContent = roomname;
-                }
+                currentRoomSpan.textContent = roomname;
                 
                 // Показать кнопку переключения сайдбара
-                if (sidebarToggleBtn) {
-                    sidebarToggleBtn.style.display = 'block';
-                }
+                sidebarToggleBtn.style.display = 'block';
                 
                 // Показать имя пользователя в поле изменения имени
                 newUsernameInput.value = username;
@@ -1486,38 +1481,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Обработчики для сайдбара
-    if (sidebarToggleBtn) {
-        sidebarToggleBtn.addEventListener('click', showControlSidebar);
-    }
-    if (closeSidebarBtn) {
-        closeSidebarBtn.addEventListener('click', hideControlSidebar);
-    }
+    sidebarToggleBtn.addEventListener('click', showControlSidebar);
+    closeSidebarBtn.addEventListener('click', hideControlSidebar);
     
     // Показать/скрыть пользовательские настройки видео для сайдбара
-    if (sidebarVideoQualitySelect) {
-        sidebarVideoQualitySelect.addEventListener('change', () => {
-            const selectedQuality = sidebarVideoQualitySelect.value;
-            if (sidebarCustomVideoSettings) {
-                sidebarCustomVideoSettings.style.display = selectedQuality === 'custom' ? 'block' : 'none';
+    sidebarVideoQualitySelect.addEventListener('change', () => {
+        const selectedQuality = sidebarVideoQualitySelect.value;
+        sidebarCustomVideoSettings.style.display = selectedQuality === 'custom' ? 'block' : 'none';
+        
+        if (selectedQuality !== 'custom') {
+            const preset = videoQualityPresets[selectedQuality];
+            if (preset) {
+                sidebarVideoWidthInput.value = preset.width;
+                sidebarVideoHeightInput.value = preset.height;
+                sidebarVideoBitrateInput.value = preset.bitrate;
             }
-            
-            if (selectedQuality !== 'custom') {
-                const preset = videoQualityPresets[selectedQuality];
-                if (preset) {
-                    if (sidebarVideoWidthInput) sidebarVideoWidthInput.value = preset.width;
-                    if (sidebarVideoHeightInput) sidebarVideoHeightInput.value = preset.height;
-                    if (sidebarVideoBitrateInput) sidebarVideoBitrateInput.value = preset.bitrate;
-                }
-            }
-        });
-    }
+        }
+    });
     
     // Применить настройки видео из сайдбара
-    if (applySidebarVideoSettingsBtn) {
-        applySidebarVideoSettingsBtn.addEventListener('click', async () => {
-            const selectedQuality = sidebarVideoQualitySelect.value;
-            let videoConstraints = {};
-            let bitrate = 0;
+    applySidebarVideoSettingsBtn.addEventListener('click', async () => {
+        const selectedQuality = sidebarVideoQualitySelect.value;
+        let videoConstraints = {};
+        let bitrate = 0;
         
         if (selectedQuality === 'custom') {
             const width = parseInt(sidebarVideoWidthInput.value, 10);
@@ -1574,42 +1560,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Синхронизация кнопок с основными
-    if (sidebarToggleVideoBtn) {
-        sidebarToggleVideoBtn.addEventListener('click', () => {
-            if (toggleVideoBtn) {
-                toggleVideoBtn.click();
-            }
-        });
-    }
+    sidebarToggleVideoBtn.addEventListener('click', () => {
+        toggleVideoBtn.click();
+    });
     
-    if (sidebarToggleKilledBtn) {
-        sidebarToggleKilledBtn.addEventListener('click', () => {
-            if (toggleKilledBtn) {
-                toggleKilledBtn.click();
-            }
-        });
-    }
+    sidebarToggleKilledBtn.addEventListener('click', () => {
+        toggleKilledBtn.click();
+    });
 
     // Leave button click handler
-    // Обработчик кнопки отключения
-    if (leaveBtn) {
-        leaveBtn.addEventListener('click', () => {
-            disconnect();
-        });
-    }
-    
-    // Обработчик кнопки отключения в сайдбаре
-    if (sidebarLeaveBtn) {
-        sidebarLeaveBtn.addEventListener('click', () => {
-            disconnect();
-        });
-    }
+    leaveBtn.addEventListener('click', () => {
+        disconnect();
+    });
     
     // Обработчик кнопки для включения/выключения статуса "убит"
-    if (toggleKilledBtn) {
-        toggleKilledBtn.addEventListener('click', () => {
-            // Инвертировать текущий статус
-            isKilled = !isKilled;
+    toggleKilledBtn.addEventListener('click', () => {
+        // Инвертировать текущий статус
+        isKilled = !isKilled;
         
         // Отправить сообщение на сервер
         sendMessage({
@@ -1632,60 +1599,56 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Обработчик кнопки для подтверждения переименования себя
-    if (confirmRenameBtn) {
-        confirmRenameBtn.addEventListener('click', () => {
-            const newName = newUsernameInput.value.trim();
-            if (!newName) {
-                showError('Имя не может быть пустым');
-                return;
-            }
-            
-            // Отправить сообщение на сервер
-            sendMessage({
-                type: 'rename',
-                username: newName
-            });
-            
-            // Закрыть модальное окно
-            renameModal.hide();
+    confirmRenameBtn.addEventListener('click', () => {
+        const newName = newUsernameInput.value.trim();
+        if (!newName) {
+            showError('Имя не может быть пустым');
+            return;
+        }
+        
+        // Отправить сообщение на сервер
+        sendMessage({
+            type: 'rename',
+            username: newName
         });
-    }
+        
+        // Закрыть модальное окно
+        renameModal.hide();
+    });
     
     // Обработчик кнопки для переименования другого пира (локально)
-    if (renamePeerBtn) {
-        renamePeerBtn.addEventListener('click', () => {
-            const peerId = peerSelect.value;
-            const newName = peerNewNameInput.value.trim();
-            
-            if (!peerId) {
-                showError('Пожалуйста, выберите участника');
-                return;
-            }
-            
-            if (!newName) {
-                showError('Имя не может быть пустым');
-                return;
-            }
-            
-            // Отправить сообщение на сервер (для подтверждения)
-            sendMessage({
-                type: 'rename_peer',
-                peerId: peerId,
-                username: newName
-            });
-            
-            // Сохранить локально (немедленный отклик)
-            localPeerNames.set(peerId, newName);
-            
-            // Обновить отображение
-            updatePeerLabel(peerId);
-            updatePeerSelect();
-            
-            // Очистить поля
-            peerNewNameInput.value = '';
-            peerSelect.value = '';
+    renamePeerBtn.addEventListener('click', () => {
+        const peerId = peerSelect.value;
+        const newName = peerNewNameInput.value.trim();
+        
+        if (!peerId) {
+            showError('Пожалуйста, выберите участника');
+            return;
+        }
+        
+        if (!newName) {
+            showError('Имя не может быть пустым');
+            return;
+        }
+        
+        // Отправить сообщение на сервер (для подтверждения)
+        sendMessage({
+            type: 'rename_peer',
+            peerId: peerId,
+            username: newName
         });
-    }
+        
+        // Сохранить локально (немедленный отклик)
+        localPeerNames.set(peerId, newName);
+        
+        // Обновить отображение
+        updatePeerLabel(peerId);
+        updatePeerSelect();
+        
+        // Очистить поля
+        peerNewNameInput.value = '';
+        peerSelect.value = '';
+    });
     
     // Обработчики для модального окна настроек видео
     const videoSettingsAction = document.querySelector('.video-settings-action');
