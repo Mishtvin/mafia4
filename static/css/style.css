@@ -223,7 +223,8 @@ body {
 /* Когда сайдбар скрыт, видео занимают всю ширину экрана */
 .video-container {
     transition: width 0.3s ease, margin-left 0.3s ease;
-    width: 100%;
+    width: 100vw;
+    max-width: 100%;
 }
 
 /* Когда сайдбар открыт, видео сдвигаются и сжимаются */
