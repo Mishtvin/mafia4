@@ -543,7 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
             localVideo.className = 'video-item';
             localVideo.innerHTML = `
                 <video autoplay muted playsinline></video>
-                <div class="video-label">You (${username})</div>
+                <div class="video-label" id="local-username-label">You (${username})</div>
             `;
             
             const videoElement = localVideo.querySelector('video');
@@ -1923,5 +1923,69 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle window unload to properly disconnect
     window.addEventListener('beforeunload', () => {
         disconnect();
+    });
+    
+    // Обработчик события для изменения имени пользователя по клику на метку имени
+    document.addEventListener('click', (e) => {
+        // Проверяем, что клик был на метке имени локального видео
+        if (e.target.id === 'local-username-label') {
+            // Создаем форму редактирования непосредственно внутри метки
+            const originalContent = e.target.innerHTML;
+            
+            e.target.innerHTML = `
+                <input type="text" class="edit-username-input" value="${username}" style="width: 80%; max-width: 150px;">
+                <button class="save-username-btn" style="margin-left: 5px;">✓</button>
+            `;
+            
+            const input = e.target.querySelector('.edit-username-input');
+            const saveBtn = e.target.querySelector('.save-username-btn');
+            
+            // Установить фокус в поле ввода
+            input.focus();
+            
+            // Обработчик для сохранения имени
+            const saveUsername = () => {
+                const newName = input.value.trim();
+                if (newName && newName !== username) {
+                    // Отправить запрос на изменение имени
+                    sendMessage({
+                        type: 'rename',
+                        kind: 'rename',
+                        id: serverId,
+                        username: newName
+                    });
+                }
+                // Восстановить оригинальное содержимое метки
+                e.target.innerHTML = originalContent;
+            };
+            
+            // Обработчик для отмены редактирования (клик вне поля)
+            const cancelEdit = (event) => {
+                if (!e.target.contains(event.target) && e.target !== event.target) {
+                    e.target.innerHTML = originalContent;
+                    document.removeEventListener('click', cancelEdit);
+                }
+            };
+            
+            // Слушатели событий для поля ввода и кнопки сохранения
+            saveBtn.addEventListener('click', (saveEvent) => {
+                saveEvent.stopPropagation();
+                saveUsername();
+                document.removeEventListener('click', cancelEdit);
+            });
+            
+            input.addEventListener('keypress', (keyEvent) => {
+                if (keyEvent.key === 'Enter') {
+                    keyEvent.preventDefault();
+                    saveUsername();
+                    document.removeEventListener('click', cancelEdit);
+                }
+            });
+            
+            // Добавляем слушатель для отмены редактирования при клике вне поля
+            setTimeout(() => {
+                document.addEventListener('click', cancelEdit);
+            }, 0);
+        }
     });
 });
