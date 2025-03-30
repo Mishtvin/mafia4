@@ -23,7 +23,7 @@ body {
     left: 0;
     width: 100%;
     height: 50px;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: transparent;
     display: none;
     justify-content: center;
     align-items: center;
@@ -31,6 +31,61 @@ body {
     color: #ffffff;
     font-size: 24px;
     font-weight: bold;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+}
+
+/* Анимация для Балаган */
+#balagan-announcement {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    background-color: #8e44ad;
+    color: white;
+    padding: 20px 40px;
+    border-radius: 10px;
+    font-size: 36px;
+    font-weight: bold;
+    z-index: 1100;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    display: none;
+    text-align: center;
+}
+
+@keyframes balaganAppear {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes balaganToTimer {
+    0% { 
+        opacity: 1; 
+        top: 50%; 
+        left: 50%; 
+        transform: translate(-50%, -50%) scale(1);
+        border-radius: 10px;
+        padding: 20px 40px;
+        width: auto;
+        height: auto;
+    }
+    20% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+    30% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+    100% { 
+        opacity: 1; 
+        top: 25px; 
+        left: 50%; 
+        transform: translate(-50%, 0) scale(0.7);
+        border-radius: 5px;
+        padding: 5px 20px;
+        width: auto;
+        height: auto;
+    }
 }
 
 .video-item {

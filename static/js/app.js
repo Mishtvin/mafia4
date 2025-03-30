@@ -2083,35 +2083,58 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Функция для запуска и отображения таймера
+    // Функция для запуска и отображения таймера с анимацией
     function startTimer(durationInSeconds) {
-        // Преобразуем секунды в миллисекунды
-        const startTime = Date.now();
-        const endTime = startTime + (durationInSeconds * 1000);
+        const balaganAnnouncement = document.getElementById('balagan-announcement');
         
-        // Показываем контейнер таймера
-        timerContainer.style.display = 'flex';
+        // Шаг 1: Показываем анимацию с текстом "Балаган" в центре
+        balaganAnnouncement.style.display = 'block';
+        balaganAnnouncement.style.opacity = '0';
+        balaganAnnouncement.style.animation = 'balaganAppear 0.5s forwards';
         
-        // Обновляем таймер каждую секунду
-        const timerInterval = setInterval(() => {
-            // Вычисляем оставшееся время
-            const currentTime = Date.now();
-            const remainingTime = endTime - currentTime;
+        // Шаг 2: Через 1.5 секунды начинаем анимацию перемещения в сторону таймера
+        setTimeout(() => {
+            balaganAnnouncement.style.animation = 'balaganToTimer 1s forwards';
             
-            if (remainingTime <= 0) {
-                // Таймер закончился
-                clearInterval(timerInterval);
-                timerContainer.style.display = 'none';
-                return;
-            }
-            
-            // Преобразуем миллисекунды в минуты и секунды
-            const minutes = Math.floor(remainingTime / 60000);
-            const seconds = Math.floor((remainingTime % 60000) / 1000);
-            
-            // Отображаем время в формате MM:SS
-            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        }, 1000);
+            // Шаг 3: Как только анимация завершена, показываем таймер и скрываем анимацию
+            setTimeout(() => {
+                // Показываем таймер
+                timerContainer.style.display = 'flex';
+                
+                // Скрываем анимацию
+                setTimeout(() => {
+                    balaganAnnouncement.style.display = 'none';
+                    balaganAnnouncement.style.animation = '';
+                    balaganAnnouncement.style.opacity = '0';
+                }, 200);
+                
+                // Запускаем отсчет
+                const startTime = Date.now();
+                const endTime = startTime + (durationInSeconds * 1000);
+                
+                // Обновляем таймер каждую секунду
+                const timerInterval = setInterval(() => {
+                    // Вычисляем оставшееся время
+                    const currentTime = Date.now();
+                    const remainingTime = endTime - currentTime;
+                    
+                    if (remainingTime <= 0) {
+                        // Таймер закончился
+                        clearInterval(timerInterval);
+                        timerContainer.style.display = 'none';
+                        return;
+                    }
+                    
+                    // Преобразуем миллисекунды в минуты и секунды
+                    const minutes = Math.floor(remainingTime / 60000);
+                    const seconds = Math.floor((remainingTime % 60000) / 1000);
+                    
+                    // Отображаем время в формате MM:SS
+                    timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                }, 1000);
+                
+            }, 1000); // Время анимации перемещения
+        }, 1500); // Время показа анимации в центре
     }
     
     // Обработчик клика на кнопку "Балаган"
