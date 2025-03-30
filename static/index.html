@@ -10,11 +10,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="row mt-4">
-            <div class="col-12">
-                <h1 class="text-center mb-4">Video Conference</h1>
-            </div>
-        </div>
+
         
         <!-- Sidebar Toggle Button -->
         <button id="sidebar-toggle" class="btn btn-dark sidebar-toggle-btn" style="display: none;">
@@ -26,6 +22,10 @@
             <div class="sidebar-header">
                 <h4>Video Controls</h4>
                 <button id="close-sidebar" class="btn-close"></button>
+            </div>
+            
+            <div class="sidebar-section">
+                <h5 id="room-title">Room: <span id="current-room">default</span></h5>
             </div>
             
             <div class="sidebar-section">
@@ -77,6 +77,9 @@
                     </button>
                     <button id="sidebar-rename-btn" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#rename-modal">
                         <span data-feather="edit"></span> Rename
+                    </button>
+                    <button id="sidebar-leave-btn" class="btn btn-danger">
+                        <span data-feather="log-out"></span> Leave Conference
                     </button>
                 </div>
             </div>
@@ -137,16 +140,7 @@
 
         <!-- Conference Section -->
         <div id="conference-section" class="row" style="display: none;">
-            <div class="col-12 mb-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h3 id="room-title">Room: <span id="current-room">default</span></h3>
-                    <div>
-                        <button id="leave-btn" class="btn btn-danger">
-                            <span data-feather="log-out"></span> Leave
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <!-- Room information moved to sidebar -->
             <div class="col-12">
                 <div id="video-container" class="video-grid"></div>
             </div>

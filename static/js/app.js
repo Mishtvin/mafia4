@@ -331,6 +331,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    // Функция для обновления названия комнаты в сайдбаре
+    function updateRoomInfo(roomName) {
+        const currentRoomElement = document.getElementById('current-room');
+        if (currentRoomElement) {
+            currentRoomElement.textContent = roomName || 'default';
+        }
+    }
+    
     // Показать/скрыть пользовательские настройки видео для пиров
     if (peerVideoQualitySelect) {
         peerVideoQualitySelect.addEventListener('change', () => {
@@ -596,6 +604,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 loginSection.style.display = 'none';
                 conferenceSection.style.display = 'block';
                 currentRoomSpan.textContent = roomname;
+                
+                // Обновить название комнаты в сайдбаре
+                updateRoomInfo(roomname);
                 
                 // Показать кнопку переключения сайдбара
                 sidebarToggleBtn.style.display = 'block';
@@ -1481,174 +1492,202 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Обработчики для сайдбара
-    sidebarToggleBtn.addEventListener('click', showControlSidebar);
-    closeSidebarBtn.addEventListener('click', hideControlSidebar);
+    if (sidebarToggleBtn) sidebarToggleBtn.addEventListener('click', showControlSidebar);
+    if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', hideControlSidebar);
+    
+    // Добавляем обработчик для кнопки Leave в сайдбаре
+    const sidebarLeaveBtn = document.getElementById('sidebar-leave-btn');
+    if (sidebarLeaveBtn) {
+        sidebarLeaveBtn.addEventListener('click', disconnect);
+    }
     
     // Показать/скрыть пользовательские настройки видео для сайдбара
-    sidebarVideoQualitySelect.addEventListener('change', () => {
-        const selectedQuality = sidebarVideoQualitySelect.value;
-        sidebarCustomVideoSettings.style.display = selectedQuality === 'custom' ? 'block' : 'none';
-        
-        if (selectedQuality !== 'custom') {
-            const preset = videoQualityPresets[selectedQuality];
-            if (preset) {
-                sidebarVideoWidthInput.value = preset.width;
-                sidebarVideoHeightInput.value = preset.height;
-                sidebarVideoBitrateInput.value = preset.bitrate;
+    if (sidebarVideoQualitySelect) {
+        sidebarVideoQualitySelect.addEventListener('change', () => {
+            const selectedQuality = sidebarVideoQualitySelect.value;
+            if (sidebarCustomVideoSettings) {
+                sidebarCustomVideoSettings.style.display = selectedQuality === 'custom' ? 'block' : 'none';
             }
-        }
-    });
+            
+            if (selectedQuality !== 'custom') {
+                const preset = videoQualityPresets[selectedQuality];
+                if (preset) {
+                    if (sidebarVideoWidthInput) sidebarVideoWidthInput.value = preset.width;
+                    if (sidebarVideoHeightInput) sidebarVideoHeightInput.value = preset.height;
+                    if (sidebarVideoBitrateInput) sidebarVideoBitrateInput.value = preset.bitrate;
+                }
+            }
+        });
+    }
     
     // Применить настройки видео из сайдбара
-    applySidebarVideoSettingsBtn.addEventListener('click', async () => {
-        const selectedQuality = sidebarVideoQualitySelect.value;
-        let videoConstraints = {};
-        let bitrate = 0;
-        
-        if (selectedQuality === 'custom') {
-            const width = parseInt(sidebarVideoWidthInput.value, 10);
-            const height = parseInt(sidebarVideoHeightInput.value, 10);
-            bitrate = parseInt(sidebarVideoBitrateInput.value, 10);
+    if (applySidebarVideoSettingsBtn && sidebarVideoQualitySelect) {
+        applySidebarVideoSettingsBtn.addEventListener('click', async () => {
+            const selectedQuality = sidebarVideoQualitySelect.value;
+            let videoConstraints = {};
+            let bitrate = 0;
             
-            videoConstraints = {
-                width: { ideal: width },
-                height: { ideal: height },
-                facingMode: 'user'
-            };
-        } else {
-            const preset = videoQualityPresets[selectedQuality];
-            videoConstraints = {
-                width: { ideal: preset.width },
-                height: { ideal: preset.height },
-                facingMode: 'user'
-            };
-            bitrate = preset.bitrate;
-        }
-        
-        // Сохраняем битрейт для будущего использования
-        window.customBitrate = bitrate;
-        
-        try {
-            // Остановить текущий стрим
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
+            if (selectedQuality === 'custom') {
+                const width = parseInt(sidebarVideoWidthInput.value, 10);
+                const height = parseInt(sidebarVideoHeightInput.value, 10);
+                bitrate = parseInt(sidebarVideoBitrateInput.value, 10);
+                
+                videoConstraints = {
+                    width: { ideal: width },
+                    height: { ideal: height },
+                    facingMode: 'user'
+                };
+            } else {
+                const preset = videoQualityPresets[selectedQuality];
+                videoConstraints = {
+                    width: { ideal: preset.width },
+                    height: { ideal: preset.height },
+                    facingMode: 'user'
+                };
+                bitrate = preset.bitrate;
             }
             
-            // Получить новый стрим с новыми настройками
-            const newStream = await navigator.mediaDevices.getUserMedia({
-                video: videoConstraints,
-                audio: false
-            });
+            // Сохраняем битрейт для будущего использования
+            window.customBitrate = bitrate;
             
-            // Заменить локальный стрим
-            localStream = newStream;
-            
-            // Обновить видео элемент
-            const videoElement = localVideo.querySelector('video');
-            videoElement.srcObject = newStream;
-            
-            // Обновить видео треки во всех peer connections
-            updateVideoTracksInPeerConnections(bitrate);
-            
-            // Закрыть сайдбар
-            hideControlSidebar();
-            
-        } catch (error) {
-            console.error('Error applying video settings from sidebar:', error);
-            showError(`Failed to apply video settings: ${error.message}`);
-        }
-    });
+            try {
+                // Остановить текущий стрим
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                }
+                
+                // Получить новый стрим с новыми настройками
+                const newStream = await navigator.mediaDevices.getUserMedia({
+                    video: videoConstraints,
+                    audio: false
+                });
+                
+                // Заменить локальный стрим
+                localStream = newStream;
+                
+                // Обновить видео элемент
+                if (localVideo) {
+                    const videoElement = localVideo.querySelector('video');
+                    if (videoElement) {
+                        videoElement.srcObject = newStream;
+                    }
+                }
+                
+                // Обновить видео треки во всех peer connections
+                updateVideoTracksInPeerConnections(bitrate);
+                
+                // Закрыть сайдбар
+                hideControlSidebar();
+                
+            } catch (error) {
+                console.error('Error applying video settings from sidebar:', error);
+                showError(`Failed to apply video settings: ${error.message}`);
+            }
+        });
+    }
     
     // Синхронизация кнопок с основными
-    sidebarToggleVideoBtn.addEventListener('click', () => {
-        toggleVideoBtn.click();
-    });
+    if (sidebarToggleVideoBtn && toggleVideoBtn) {
+        sidebarToggleVideoBtn.addEventListener('click', () => {
+            toggleVideoBtn.click();
+        });
+    }
     
-    sidebarToggleKilledBtn.addEventListener('click', () => {
-        toggleKilledBtn.click();
-    });
+    if (sidebarToggleKilledBtn && toggleKilledBtn) {
+        sidebarToggleKilledBtn.addEventListener('click', () => {
+            toggleKilledBtn.click();
+        });
+    }
 
     // Leave button click handler
-    leaveBtn.addEventListener('click', () => {
-        disconnect();
-    });
+    if (leaveBtn) {
+        leaveBtn.addEventListener('click', () => {
+            disconnect();
+        });
+    }
     
     // Обработчик кнопки для включения/выключения статуса "убит"
-    toggleKilledBtn.addEventListener('click', () => {
-        // Инвертировать текущий статус
-        isKilled = !isKilled;
-        
-        // Отправить сообщение на сервер
-        sendMessage({
-            type: 'killed',
-            killed: isKilled
-        });
-        
-        // Обновить кнопки
-        const killedIconHTML = isKilled ? 
-            '<span data-feather="user"></span> Unmark as Disconnected' : 
-            '<span data-feather="user-x"></span> Mark as Disconnected';
+    if (toggleKilledBtn) {
+        toggleKilledBtn.addEventListener('click', () => {
+            // Инвертировать текущий статус
+            isKilled = !isKilled;
             
-        toggleKilledBtn.innerHTML = killedIconHTML;
-        sidebarToggleKilledBtn.innerHTML = killedIconHTML;
-        
-        feather.replace();
-        
-        // Обновить отображение в видео элементе (мгновенный отклик)
-        updateLocalKilledStatus();
-    });
+            // Отправить сообщение на сервер
+            sendMessage({
+                type: 'killed',
+                killed: isKilled
+            });
+            
+            // Обновить кнопки
+            const killedIconHTML = isKilled ? 
+                '<span data-feather="user"></span> Unmark as Disconnected' : 
+                '<span data-feather="user-x"></span> Mark as Disconnected';
+                
+            if (toggleKilledBtn) toggleKilledBtn.innerHTML = killedIconHTML;
+            if (sidebarToggleKilledBtn) sidebarToggleKilledBtn.innerHTML = killedIconHTML;
+            
+            feather.replace();
+            
+            // Обновить отображение в видео элементе (мгновенный отклик)
+            updateLocalKilledStatus();
+        });
+    }
     
     // Обработчик кнопки для подтверждения переименования себя
-    confirmRenameBtn.addEventListener('click', () => {
-        const newName = newUsernameInput.value.trim();
-        if (!newName) {
-            showError('Имя не может быть пустым');
-            return;
-        }
-        
-        // Отправить сообщение на сервер
-        sendMessage({
-            type: 'rename',
-            username: newName
+    if (confirmRenameBtn && newUsernameInput) {
+        confirmRenameBtn.addEventListener('click', () => {
+            const newName = newUsernameInput.value.trim();
+            if (!newName) {
+                showError('Имя не может быть пустым');
+                return;
+            }
+            
+            // Отправить сообщение на сервер
+            sendMessage({
+                type: 'rename',
+                username: newName
+            });
+            
+            // Закрыть модальное окно
+            if (renameModal) renameModal.hide();
         });
-        
-        // Закрыть модальное окно
-        renameModal.hide();
-    });
+    }
     
     // Обработчик кнопки для переименования другого пира (локально)
-    renamePeerBtn.addEventListener('click', () => {
-        const peerId = peerSelect.value;
-        const newName = peerNewNameInput.value.trim();
-        
-        if (!peerId) {
-            showError('Пожалуйста, выберите участника');
-            return;
-        }
-        
-        if (!newName) {
-            showError('Имя не может быть пустым');
-            return;
-        }
-        
-        // Отправить сообщение на сервер (для подтверждения)
-        sendMessage({
-            type: 'rename_peer',
-            peerId: peerId,
-            username: newName
+    if (renamePeerBtn && peerSelect && peerNewNameInput) {
+        renamePeerBtn.addEventListener('click', () => {
+            const peerId = peerSelect.value;
+            const newName = peerNewNameInput.value.trim();
+            
+            if (!peerId) {
+                showError('Пожалуйста, выберите участника');
+                return;
+            }
+            
+            if (!newName) {
+                showError('Имя не может быть пустым');
+                return;
+            }
+            
+            // Отправить сообщение на сервер (для подтверждения)
+            sendMessage({
+                type: 'rename_peer',
+                peerId: peerId,
+                username: newName
+            });
+            
+            // Сохранить локально (немедленный отклик)
+            localPeerNames.set(peerId, newName);
+            
+            // Обновить отображение
+            updatePeerLabel(peerId);
+            updatePeerSelect();
+            
+            // Очистить поля
+            peerNewNameInput.value = '';
+            peerSelect.value = '';
         });
-        
-        // Сохранить локально (немедленный отклик)
-        localPeerNames.set(peerId, newName);
-        
-        // Обновить отображение
-        updatePeerLabel(peerId);
-        updatePeerSelect();
-        
-        // Очистить поля
-        peerNewNameInput.value = '';
-        peerSelect.value = '';
-    });
+    }
     
     // Обработчики для модального окна настроек видео
     const videoSettingsAction = document.querySelector('.video-settings-action');
