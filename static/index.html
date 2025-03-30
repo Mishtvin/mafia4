@@ -29,7 +29,15 @@
             </div>
             
             <div class="sidebar-section">
-                <h5>Video Quality Settings</h5>
+                <h5>Video Settings</h5>
+                
+                <div class="mb-3">
+                    <label for="camera-select" class="form-label">Camera</label>
+                    <select class="form-select" id="camera-select">
+                        <option value="">Loading cameras...</option>
+                    </select>
+                </div>
+                
                 <div class="mb-3">
                     <label for="sidebar-video-quality" class="form-label">Quality Preset</label>
                     <select class="form-select" id="sidebar-video-quality">
@@ -91,6 +99,12 @@
                             <div class="mb-3 form-check">
                                 <input type="checkbox" class="form-check-input" id="video-enabled" checked>
                                 <label class="form-check-label" for="video-enabled">Enable Video</label>
+                            </div>
+                            <div class="mb-3">
+                                <label for="camera-select-login" class="form-label">Camera</label>
+                                <select class="form-select" id="camera-select-login">
+                                    <option value="">Loading cameras...</option>
+                                </select>
                             </div>
                             <div class="mb-3">
                                 <label for="video-quality" class="form-label">Video Quality</label>

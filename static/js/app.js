@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize Feather icons
     feather.replace();
-
+    
     // DOM elements
     const joinForm = document.getElementById('join-form');
     const usernameInput = document.getElementById('username');
@@ -12,6 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const videoWidthInput = document.getElementById('video-width');
     const videoHeightInput = document.getElementById('video-height');
     const videoBitrateInput = document.getElementById('video-bitrate');
+    const cameraSelectLogin = document.getElementById('camera-select-login');
+    const cameraSelect = document.getElementById('camera-select');
     const loginSection = document.getElementById('login-section');
     const conferenceSection = document.getElementById('conference-section');
     const videoContainer = document.getElementById('video-container');
@@ -80,6 +82,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let videoEnabled = true;
     let isKilled = false;  // Состояние "отключен/убит"
     
+    // Список доступных камер и выбранная камера
+    let availableCameras = [];
+    let selectedCameraId = '';
+    
+    
     // Локальные переименования других пиров (видны только пользователю)
     const localPeerNames = new Map();
     // Информация о пирах
@@ -102,7 +109,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Инициализировать настройки локального видео при открытии модального окна
     if (localVideoSettingsBtn) {
-        localVideoSettingsBtn.addEventListener('click', () => {
+        localVideoSettingsBtn.addEventListener('click', async () => {
+            // Обновим список камер перед открытием модального окна
+            await loadCameras();
+            
             // Определить текущее качество видео
             const videoTrack = localStream && localStream.getVideoTracks()[0];
             if (videoTrack) {
@@ -145,6 +155,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (localBitrateValue) {
                     localBitrateValue.textContent = `${bitrate} kbps`;
+                }
+                
+                // Выбрать текущую камеру
+                if (settings.deviceId && cameraSelect) {
+                    cameraSelect.value = settings.deviceId;
+                    selectedCameraId = settings.deviceId;
                 }
             }
         });
@@ -241,6 +257,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     facingMode: 'user'
                 };
                 bitrate = preset.bitrate;
+            }
+            
+            // Используем выбранную камеру из выпадающего списка в модальном окне
+            if (cameraSelect && cameraSelect.value) {
+                videoConstraints.deviceId = { exact: cameraSelect.value };
+                selectedCameraId = cameraSelect.value;
             }
             
             // Сохраняем битрейт для будущего использования
@@ -380,6 +402,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Обработчик события выбора камеры в форме логина
+    if (cameraSelectLogin) {
+        cameraSelectLogin.addEventListener('change', () => {
+            selectedCameraId = cameraSelectLogin.value;
+            console.log('Login form: Camera changed to:', selectedCameraId);
+        });
+    }
+    
     // Join form submission handler
     if (joinForm) {
         joinForm.addEventListener('submit', async (e) => {
@@ -393,6 +423,11 @@ document.addEventListener('DOMContentLoaded', () => {
             username = usernameInput.value.trim();
             roomname = roomnameInput.value.trim() || 'default';
             videoEnabled = videoEnabledCheckbox.checked;
+            
+            // Получим выбранную камеру
+            if (cameraSelectLogin && cameraSelectLogin.value) {
+                selectedCameraId = cameraSelectLogin.value;
+            }
             
             // Получить настройки качества видео
             const selectedQuality = videoQualitySelect.value;
@@ -428,6 +463,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Сохраняем битрейт для будущего использования
                     window.customBitrate = preset.bitrate;
                 }
+                
+                // Добавим выбор устройства, если оно указано
+                if (selectedCameraId) {
+                    videoConstraints.deviceId = { exact: selectedCameraId };
+                }
             }
             
             try {
@@ -440,6 +480,94 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Set up local video stream
+    // Функция для получения списка доступных камер
+    async function loadCameras() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+            console.error('Your browser does not support camera enumeration');
+            return;
+        }
+        
+        try {
+            // Сначала запросим временный доступ к устройствам через getUserMedia,
+            // чтобы получить доступ к названиям устройств, иначе будет доступен только device.kind
+            await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+            availableCameras = videoDevices;
+            
+            console.log('Available cameras:', availableCameras);
+            
+            // Обновить селекторы камер
+            if (cameraSelectLogin) {
+                // Сохраним текущее значение
+                const currentValue = cameraSelectLogin.value;
+                
+                // Очистим выпадающий список
+                cameraSelectLogin.innerHTML = '';
+                
+                if (videoDevices.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.text = 'No cameras found';
+                    cameraSelectLogin.appendChild(option);
+                } else {
+                    videoDevices.forEach(device => {
+                        const option = document.createElement('option');
+                        option.value = device.deviceId;
+                        option.text = device.label || `Camera ${videoDevices.indexOf(device) + 1}`;
+                        cameraSelectLogin.appendChild(option);
+                    });
+                    
+                    // Если у нас был выбранный deviceId, попробуем его восстановить
+                    if (currentValue && videoDevices.some(d => d.deviceId === currentValue)) {
+                        cameraSelectLogin.value = currentValue;
+                    } else {
+                        // Иначе выберем первую камеру
+                        cameraSelectLogin.value = videoDevices[0].deviceId;
+                    }
+                    
+                    selectedCameraId = cameraSelectLogin.value;
+                }
+            }
+            
+            if (cameraSelect) {
+                // Сохраним текущее значение
+                const currentValue = cameraSelect.value;
+                
+                // Очистим выпадающий список
+                cameraSelect.innerHTML = '';
+                
+                if (videoDevices.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.text = 'No cameras found';
+                    cameraSelect.appendChild(option);
+                } else {
+                    videoDevices.forEach(device => {
+                        const option = document.createElement('option');
+                        option.value = device.deviceId;
+                        option.text = device.label || `Camera ${videoDevices.indexOf(device) + 1}`;
+                        cameraSelect.appendChild(option);
+                    });
+                    
+                    // Если у нас был выбранный deviceId, попробуем его восстановить
+                    if (currentValue && videoDevices.some(d => d.deviceId === currentValue)) {
+                        cameraSelect.value = currentValue;
+                    } else {
+                        // Иначе выберем первую камеру или текущую выбранную в логине
+                        cameraSelect.value = selectedCameraId || videoDevices[0].deviceId;
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error enumerating devices:', error);
+        }
+    }
+    
+    // Загрузим список камер при загрузке страницы
+    loadCameras();
+    
     async function setupLocalStream(videoConstraints = null) {
         try {
             console.log('Setting up local video stream, video enabled:', videoEnabled);
@@ -449,16 +577,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Your browser does not support camera access. Please try using Chrome or Firefox.');
             }
             
+            // Обновим список камер, если нужно
+            if (availableCameras.length === 0) {
+                await loadCameras();
+            }
+            
+            // Получим выбранную камеру из селекторов
+            if (cameraSelectLogin && cameraSelectLogin.value) {
+                selectedCameraId = cameraSelectLogin.value;
+            }
+            
             // Try to get camera with different fallback options
             let stream = null;
+            let deviceConstraints = videoConstraints || {
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                facingMode: 'user'
+            };
+            
+            // Добавим выбор устройства, если оно указано
+            if (selectedCameraId) {
+                deviceConstraints.deviceId = { exact: selectedCameraId };
+            }
+            
             const constraints = {
-                video: videoEnabled ? 
-                    (videoConstraints || {
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 },
-                        facingMode: 'user'
-                    }) 
-                    : false,
+                video: videoEnabled ? deviceConstraints : false,
                 audio: false // No audio per requirements
             };
             
@@ -1514,7 +1657,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    // Обработчик события выбора камеры в сайдбаре
+    if (cameraSelect) {
+        cameraSelect.addEventListener('change', () => {
+            selectedCameraId = cameraSelect.value;
+            console.log('Camera changed to:', selectedCameraId);
+        });
+    }
+    
     // Применить настройки видео из сайдбара
+    // Обработчик выбора камеры в сайдбаре
+    if (cameraSelect) {
+        cameraSelect.addEventListener('change', () => {
+            selectedCameraId = cameraSelect.value;
+            console.log('Camera changed to:', selectedCameraId);
+        });
+    }
+
     if (applySidebarVideoSettingsBtn && sidebarVideoQualitySelect) {
         applySidebarVideoSettingsBtn.addEventListener('click', async () => {
             const selectedQuality = sidebarVideoQualitySelect.value;
@@ -1539,6 +1698,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     facingMode: 'user'
                 };
                 bitrate = preset.bitrate;
+            }
+            
+            // Добавим выбор устройства, если оно указано
+            if (selectedCameraId) {
+                videoConstraints.deviceId = { exact: selectedCameraId };
             }
             
             // Сохраняем битрейт для будущего использования
