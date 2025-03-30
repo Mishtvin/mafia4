@@ -1366,7 +1366,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Toggle local video
-    toggleVideoBtn.addEventListener('click', async () => {
+    if (toggleVideoBtn) {
+        toggleVideoBtn.addEventListener('click', async () => {
         videoEnabled = !videoEnabled;
         
         if (localStream) {
@@ -1435,6 +1436,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+    }
     
     // Функции управления сайдбаром
     function showControlSidebar() {
