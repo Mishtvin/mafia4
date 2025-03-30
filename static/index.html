@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +13,11 @@
 
         <!-- Login Section -->
         <div id="login-section" class="row justify-content-center mb-4 align-items-center" style="min-height: 90vh;">
+            <div class="d-flex justify-content-end mb-2 px-3">
+                <button id="theme-toggle-btn-login" class="btn btn-outline-secondary rounded-circle p-2 me-2">
+                    <span data-feather="moon"></span>
+                </button>
+            </div>
             <div class="col-md-6 text-center">
                 <div class="mb-5">
                     <div class="d-inline-block p-4 bg-dark rounded-circle mb-3">
@@ -68,10 +73,16 @@
 
         <!-- Conference Section -->
         <div id="conference-section" class="row" style="display: none;">
-            <!-- Sidebar Toggle Button -->
-            <button id="sidebar-toggle" class="btn sidebar-toggle-btn" style="display: none;">
-                <span data-feather="settings"></span>
-            </button>
+            <!-- Top Controls -->
+            <div class="d-flex justify-content-end mb-2">
+                <button id="theme-toggle-btn" class="btn btn-outline-secondary rounded-circle p-2 me-2">
+                    <span data-feather="moon"></span>
+                </button>
+                <!-- Sidebar Toggle Button -->
+                <button id="sidebar-toggle" class="btn sidebar-toggle-btn" style="display: none;">
+                    <span data-feather="settings"></span>
+                </button>
+            </div>
             
             <!-- Video Controls Sidebar -->
             <div id="control-sidebar" class="control-sidebar">

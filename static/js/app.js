@@ -595,10 +595,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 serverId = message.id;
                 loginSection.style.display = 'none';
                 conferenceSection.style.display = 'block';
-                currentRoomSpan.textContent = roomname;
+                // Установить название комнаты, если элемент существует
+                if (currentRoomSpan) {
+                    currentRoomSpan.textContent = roomname;
+                }
                 
                 // Показать кнопку переключения сайдбара
-                sidebarToggleBtn.style.display = 'block';
+                if (sidebarToggleBtn) {
+                    sidebarToggleBtn.style.display = 'block';
+                }
                 
                 // Показать имя пользователя в поле изменения имени
                 newUsernameInput.value = username;
@@ -1481,29 +1486,38 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Обработчики для сайдбара
-    sidebarToggleBtn.addEventListener('click', showControlSidebar);
-    closeSidebarBtn.addEventListener('click', hideControlSidebar);
+    if (sidebarToggleBtn) {
+        sidebarToggleBtn.addEventListener('click', showControlSidebar);
+    }
+    if (closeSidebarBtn) {
+        closeSidebarBtn.addEventListener('click', hideControlSidebar);
+    }
     
     // Показать/скрыть пользовательские настройки видео для сайдбара
-    sidebarVideoQualitySelect.addEventListener('change', () => {
-        const selectedQuality = sidebarVideoQualitySelect.value;
-        sidebarCustomVideoSettings.style.display = selectedQuality === 'custom' ? 'block' : 'none';
-        
-        if (selectedQuality !== 'custom') {
-            const preset = videoQualityPresets[selectedQuality];
-            if (preset) {
-                sidebarVideoWidthInput.value = preset.width;
-                sidebarVideoHeightInput.value = preset.height;
-                sidebarVideoBitrateInput.value = preset.bitrate;
+    if (sidebarVideoQualitySelect) {
+        sidebarVideoQualitySelect.addEventListener('change', () => {
+            const selectedQuality = sidebarVideoQualitySelect.value;
+            if (sidebarCustomVideoSettings) {
+                sidebarCustomVideoSettings.style.display = selectedQuality === 'custom' ? 'block' : 'none';
             }
-        }
-    });
+            
+            if (selectedQuality !== 'custom') {
+                const preset = videoQualityPresets[selectedQuality];
+                if (preset) {
+                    if (sidebarVideoWidthInput) sidebarVideoWidthInput.value = preset.width;
+                    if (sidebarVideoHeightInput) sidebarVideoHeightInput.value = preset.height;
+                    if (sidebarVideoBitrateInput) sidebarVideoBitrateInput.value = preset.bitrate;
+                }
+            }
+        });
+    }
     
     // Применить настройки видео из сайдбара
-    applySidebarVideoSettingsBtn.addEventListener('click', async () => {
-        const selectedQuality = sidebarVideoQualitySelect.value;
-        let videoConstraints = {};
-        let bitrate = 0;
+    if (applySidebarVideoSettingsBtn) {
+        applySidebarVideoSettingsBtn.addEventListener('click', async () => {
+            const selectedQuality = sidebarVideoQualitySelect.value;
+            let videoConstraints = {};
+            let bitrate = 0;
         
         if (selectedQuality === 'custom') {
             const width = parseInt(sidebarVideoWidthInput.value, 10);
@@ -1560,13 +1574,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Синхронизация кнопок с основными
-    sidebarToggleVideoBtn.addEventListener('click', () => {
-        toggleVideoBtn.click();
-    });
+    if (sidebarToggleVideoBtn) {
+        sidebarToggleVideoBtn.addEventListener('click', () => {
+            if (toggleVideoBtn) {
+                toggleVideoBtn.click();
+            }
+        });
+    }
     
-    sidebarToggleKilledBtn.addEventListener('click', () => {
-        toggleKilledBtn.click();
-    });
+    if (sidebarToggleKilledBtn) {
+        sidebarToggleKilledBtn.addEventListener('click', () => {
+            if (toggleKilledBtn) {
+                toggleKilledBtn.click();
+            }
+        });
+    }
 
     // Leave button click handler
     // Обработчик кнопки отключения
@@ -1584,9 +1606,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Обработчик кнопки для включения/выключения статуса "убит"
-    toggleKilledBtn.addEventListener('click', () => {
-        // Инвертировать текущий статус
-        isKilled = !isKilled;
+    if (toggleKilledBtn) {
+        toggleKilledBtn.addEventListener('click', () => {
+            // Инвертировать текущий статус
+            isKilled = !isKilled;
         
         // Отправить сообщение на сервер
         sendMessage({
@@ -1609,56 +1632,60 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Обработчик кнопки для подтверждения переименования себя
-    confirmRenameBtn.addEventListener('click', () => {
-        const newName = newUsernameInput.value.trim();
-        if (!newName) {
-            showError('Имя не может быть пустым');
-            return;
-        }
-        
-        // Отправить сообщение на сервер
-        sendMessage({
-            type: 'rename',
-            username: newName
+    if (confirmRenameBtn) {
+        confirmRenameBtn.addEventListener('click', () => {
+            const newName = newUsernameInput.value.trim();
+            if (!newName) {
+                showError('Имя не может быть пустым');
+                return;
+            }
+            
+            // Отправить сообщение на сервер
+            sendMessage({
+                type: 'rename',
+                username: newName
+            });
+            
+            // Закрыть модальное окно
+            renameModal.hide();
         });
-        
-        // Закрыть модальное окно
-        renameModal.hide();
-    });
+    }
     
     // Обработчик кнопки для переименования другого пира (локально)
-    renamePeerBtn.addEventListener('click', () => {
-        const peerId = peerSelect.value;
-        const newName = peerNewNameInput.value.trim();
-        
-        if (!peerId) {
-            showError('Пожалуйста, выберите участника');
-            return;
-        }
-        
-        if (!newName) {
-            showError('Имя не может быть пустым');
-            return;
-        }
-        
-        // Отправить сообщение на сервер (для подтверждения)
-        sendMessage({
-            type: 'rename_peer',
-            peerId: peerId,
-            username: newName
+    if (renamePeerBtn) {
+        renamePeerBtn.addEventListener('click', () => {
+            const peerId = peerSelect.value;
+            const newName = peerNewNameInput.value.trim();
+            
+            if (!peerId) {
+                showError('Пожалуйста, выберите участника');
+                return;
+            }
+            
+            if (!newName) {
+                showError('Имя не может быть пустым');
+                return;
+            }
+            
+            // Отправить сообщение на сервер (для подтверждения)
+            sendMessage({
+                type: 'rename_peer',
+                peerId: peerId,
+                username: newName
+            });
+            
+            // Сохранить локально (немедленный отклик)
+            localPeerNames.set(peerId, newName);
+            
+            // Обновить отображение
+            updatePeerLabel(peerId);
+            updatePeerSelect();
+            
+            // Очистить поля
+            peerNewNameInput.value = '';
+            peerSelect.value = '';
         });
-        
-        // Сохранить локально (немедленный отклик)
-        localPeerNames.set(peerId, newName);
-        
-        // Обновить отображение
-        updatePeerLabel(peerId);
-        updatePeerSelect();
-        
-        // Очистить поля
-        peerNewNameInput.value = '';
-        peerSelect.value = '';
-    });
+    }
     
     // Обработчики для модального окна настроек видео
     const videoSettingsAction = document.querySelector('.video-settings-action');
@@ -1844,4 +1871,72 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('beforeunload', () => {
         disconnect();
     });
+    
+    // Дополнительная функция для переключения темы (светлая/темная)
+    setupLightDarkThemeToggle();
 });
+
+// Функция для настройки переключения между светлой и темной темой
+function setupLightDarkThemeToggle() {
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    const themeToggleBtnLogin = document.getElementById('theme-toggle-btn-login');
+    
+    // Определить начальное состояние темы
+    const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    let currentTheme = localStorage.getItem('theme');
+    
+    if (!currentTheme) {
+        currentTheme = prefersDarkScheme ? 'dark' : 'light';
+        localStorage.setItem('theme', currentTheme);
+    }
+    
+    // Применить тему при загрузке
+    document.documentElement.setAttribute('data-bs-theme', currentTheme);
+    
+    // Обновить иконки кнопок
+    updateThemeToggleButton(themeToggleBtn, currentTheme);
+    updateThemeToggleButton(themeToggleBtnLogin, currentTheme);
+    
+    // Слушатель для кнопки переключения в конференции
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+            toggleTheme();
+        });
+    }
+    
+    // Слушатель для кнопки переключения на экране входа
+    if (themeToggleBtnLogin) {
+        themeToggleBtnLogin.addEventListener('click', () => {
+            toggleTheme();
+        });
+    }
+    
+    // Функция для переключения темы
+    function toggleTheme() {
+        // Инвертировать тему
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-bs-theme', newTheme);
+        
+        // Сохранить в localStorage
+        localStorage.setItem('theme', newTheme);
+        
+        // Обновить текущую тему
+        currentTheme = newTheme;
+        
+        // Обновить иконки кнопок
+        updateThemeToggleButton(themeToggleBtn, currentTheme);
+        updateThemeToggleButton(themeToggleBtnLogin, currentTheme);
+    }
+    
+    // Вспомогательная функция для обновления иконки кнопки
+    function updateThemeToggleButton(button, theme) {
+        if (!button) return;
+        
+        const iconHTML = theme === 'dark' 
+            ? '<span data-feather="sun"></span>' 
+            : '<span data-feather="moon"></span>';
+            
+        button.innerHTML = iconHTML;
+        feather.replace();
+    }
+}

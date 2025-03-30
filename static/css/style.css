@@ -1,55 +1,71 @@
 :root {
+    /* Общие цвета */
     --primary-color: #6c5ce7;
     --primary-dark: #5541d7;
     --primary-light: #897dec;
     --accent-color: #8c7ae6;
-    --dark-bg: #121212;
-    --dark-surface: #1e1e1e;
-    --dark-card: #2d2d2d;
-    --light-text: #ffffff;
-    --secondary-text: #a7a7a7;
     --danger-color: #e74c3c;
     --warning-color: #f39c12;
     --info-color: #3498db;
     --success-color: #2ecc71;
+    
+    /* Темная тема (по умолчанию) */
+    --bg-color: #121212;
+    --surface-color: #1e1e1e;
+    --card-color: #2d2d2d;
+    --text-color: #ffffff;
+    --secondary-text-color: #a7a7a7;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --hover-color: rgba(108, 92, 231, 0.2);
+}
+
+/* Светлая тема */
+[data-bs-theme="light"] {
+    --bg-color: #f8f9fa;
+    --surface-color: #ffffff;
+    --card-color: #f0f0f0;
+    --text-color: #212529;
+    --secondary-text-color: #6c757d;
+    --border-color: rgba(0, 0, 0, 0.1);
+    --hover-color: rgba(108, 92, 231, 0.1);
 }
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--dark-bg);
-    color: var(--light-text);
+    background-color: var(--bg-color);
+    color: var(--text-color);
 }
 
 /* Override Bootstrap styles */
 .card {
-    background-color: var(--dark-surface);
+    background-color: var(--surface-color);
     border: none;
     border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
 .card-header {
-    background-color: var(--dark-card);
-    color: var(--light-text);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: var(--card-color);
+    color: var(--text-color);
+    border-bottom: 1px solid var(--border-color);
     font-weight: 600;
 }
 
 .form-control, .form-select {
-    background-color: var(--dark-card);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: var(--light-text);
+    background-color: var(--card-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
 }
 
 .form-control:focus, .form-select:focus {
-    background-color: var(--dark-card);
+    background-color: var(--card-color);
     border-color: var(--primary-color);
-    color: var(--light-text);
+    color: var(--text-color);
     box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.25);
 }
 
 .form-label {
-    color: var(--light-text);
+    color: var(--text-color);
 }
 
 .form-check-input:checked {
@@ -58,12 +74,13 @@ body {
 }
 
 .text-muted {
-    color: var(--secondary-text) !important;
+    color: var(--secondary-text-color) !important;
 }
 
 .btn-primary {
     background-color: var(--primary-color);
     border-color: var(--primary-color);
+    color: #ffffff;
 }
 
 .btn-primary:hover, .btn-primary:focus {
@@ -72,8 +89,8 @@ body {
 }
 
 .btn-secondary {
-    background-color: var(--dark-card);
-    border-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--card-color);
+    border-color: var(--border-color);
 }
 
 .btn-danger {
@@ -84,26 +101,42 @@ body {
 .btn-warning {
     background-color: var(--warning-color);
     border-color: var(--warning-color);
-    color: var(--dark-bg);
+    color: var(--bg-color);
 }
 
 .btn-info {
     background-color: var(--info-color);
     border-color: var(--info-color);
-    color: var(--light-text);
+    color: #ffffff;
+}
+
+.btn-outline-light {
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+.btn-outline-light:hover {
+    background-color: var(--hover-color);
+    color: var(--text-color);
+    border-color: var(--primary-color);
+}
+
+.btn-outline-secondary {
+    border-color: var(--border-color);
+    color: var(--text-color);
 }
 
 .modal-content {
-    background-color: var(--dark-surface);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
 }
 
 .modal-header {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .modal-footer {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid var(--border-color);
 }
 
 /* Video grid styles */
@@ -184,9 +217,9 @@ body {
     grid-column: 1 / -1;
     text-align: center;
     padding: 40px;
-    color: var(--secondary-text);
+    color: var(--secondary-text-color);
     font-style: italic;
-    background-color: var(--dark-card);
+    background-color: var(--card-color);
     border-radius: 8px;
 }
 
@@ -218,11 +251,11 @@ body {
     min-width: 200px;
     z-index: 1000;
     position: absolute;
-    background-color: var(--dark-card);
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    background-color: var(--card-color);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
     border-radius: 8px;
     display: none;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
 }
 
 #video-context-menu.show {
@@ -232,14 +265,14 @@ body {
 .dropdown-item {
     display: block;
     padding: 10px 16px;
-    color: var(--light-text);
+    color: var(--text-color);
     text-decoration: none;
     cursor: pointer;
     border-radius: 4px;
 }
 
 .dropdown-item:hover {
-    background-color: rgba(108, 92, 231, 0.2);
+    background-color: var(--hover-color);
 }
 
 .dropdown-item span {
@@ -250,11 +283,11 @@ body {
 #custom-video-settings, 
 #peer-custom-video-settings, 
 #sidebar-custom-video-settings {
-    background-color: var(--dark-card);
+    background-color: var(--card-color);
     border-radius: 8px;
     padding: 15px;
     margin-top: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
 }
 
 #peer-bitrate-value, 
@@ -270,13 +303,13 @@ body {
     width: 350px;
     top: 0;
     right: -350px;
-    background-color: var(--dark-surface);
-    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.5);
+    background-color: var(--surface-color);
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3);
     transition: right 0.3s ease;
     overflow-y: auto;
     z-index: 1050;
     padding: 25px;
-    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    border-left: 1px solid var(--border-color);
 }
 
 .control-sidebar.show {
@@ -288,7 +321,7 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--border-color);
     padding-bottom: 15px;
 }
 
@@ -309,21 +342,21 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     background-color: var(--primary-color);
     border: none;
 }
 
 .sidebar-section {
     margin-bottom: 30px;
-    background-color: var(--dark-card);
+    background-color: var(--card-color);
     padding: 20px;
     border-radius: 10px;
 }
 
 .sidebar-section h5 {
     margin-bottom: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--border-color);
     padding-bottom: 10px;
     color: var(--primary-light);
     font-weight: 600;
@@ -332,7 +365,7 @@ body {
 .alert-info {
     background-color: rgba(52, 152, 219, 0.2);
     border-color: rgba(52, 152, 219, 0.3);
-    color: var(--light-text);
+    color: var(--text-color);
 }
 
 /* User avatar circle styles */
