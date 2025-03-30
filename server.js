@@ -704,10 +704,11 @@ function handleBalagan(clientId, message) {
     
     const duration = message.duration || 60; // Длительность в секундах (по умолчанию 60)
     
-    // Отправляем сообщение всем в комнате о начале "Балагана"
+    // Отправляем сообщение всем в комнате о начале "Балагана" или таймера
     broadcastToRoom(client.room, {
         type: 'balagan',
-        duration: duration
+        duration: duration,
+        showAnimation: message.showAnimation !== undefined ? message.showAnimation : true
     });
     
     // Устанавливаем таймер для отправки сообщения о завершении таймера

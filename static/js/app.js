@@ -25,6 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const renamePeerSection = document.getElementById('rename-peer-section');
     const reviveAllBtn = document.getElementById('revive-all-btn');
     const balaganBtn = document.getElementById('balagan-btn');
+    const timer60SecBtn = document.getElementById('timer-60sec-btn');
+    const timer30SecBtn = document.getElementById('timer-30sec-btn');
 
     const timerContainer = document.getElementById('timer-container');
     const timerDisplay = document.getElementById('timer-display');
@@ -690,9 +692,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         switch (message.type) {
             case 'balagan':
-                // Сервер сообщает о начале "Балагана" (включение таймера)
+                // Сервер сообщает о начале "Балагана" или таймера
                 console.log(`Received balagan message with duration: ${message.duration} seconds`);
-                startTimer(message.duration || 60);
+                const showAnimation = message.showAnimation !== undefined ? message.showAnimation : true;
+                startTimer(message.duration || 60, showAnimation);
                 break;
                 
             case 'stop_balagan':
@@ -2122,7 +2125,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Функция для запуска и отображения таймера с анимацией
-    function startTimer(durationInSeconds) {
+    function startTimer(durationInSeconds, showAnimation = true) {
         const balaganAnnouncement = document.getElementById('balagan-announcement');
         const stopBalaganAnnouncement = document.getElementById('stop-balagan-announcement');
         
@@ -2134,69 +2137,79 @@ document.addEventListener('DOMContentLoaded', () => {
             timerContainer.style.display = 'none';
         }
         
-        // Шаг 1: Показываем анимацию с текстом "Балаган" в центре
-        balaganAnnouncement.style.display = 'block';
-        balaganAnnouncement.style.opacity = '0';
-        balaganAnnouncement.style.animation = 'balaganAppear 0.5s forwards';
-        
-        // Шаг 2: Через 1 секунду начинаем анимацию перемещения в сторону таймера
-        setTimeout(() => {
-            balaganAnnouncement.style.animation = 'balaganToTimer 0.8s forwards';
+        if (showAnimation) {
+            // Шаг 1: Показываем анимацию с текстом "Балаган" в центре
+            balaganAnnouncement.style.display = 'block';
+            balaganAnnouncement.style.opacity = '0';
+            balaganAnnouncement.style.animation = 'balaganAppear 0.5s forwards';
             
-            // Шаг 3: Как только анимация завершена, показываем таймер и сразу скрываем надпись
+            // Шаг 2: Через 1 секунду начинаем анимацию перемещения в сторону таймера
             setTimeout(() => {
-                // Показываем таймер
-                timerContainer.style.display = 'flex';
-                timerDisplay.style.opacity = '1';
+                balaganAnnouncement.style.animation = 'balaganToTimer 0.8s forwards';
                 
-                // Сразу скрываем анимацию "Балаган"
-                balaganAnnouncement.style.display = 'none';
-                balaganAnnouncement.style.animation = '';
-                
-                // Запускаем отсчет
-                const startTime = Date.now();
-                const endTime = startTime + (durationInSeconds * 1000);
-                
-                // Обновляем таймер каждую секунду
-                currentTimerInterval = setInterval(() => {
-                    // Вычисляем оставшееся время
-                    const currentTime = Date.now();
-                    const remainingTime = endTime - currentTime;
+                // Шаг 3: Как только анимация завершена, показываем таймер и сразу скрываем надпись
+                setTimeout(() => {
+                    // Показываем таймер
+                    timerContainer.style.display = 'flex';
+                    timerDisplay.style.opacity = '1';
                     
-                    if (remainingTime <= 0) {
-                        // Таймер закончился
-                        clearInterval(currentTimerInterval);
-                        currentTimerInterval = null;
-                        timerContainer.style.display = 'none';
+                    // Сразу скрываем анимацию "Балаган"
+                    balaganAnnouncement.style.display = 'none';
+                    balaganAnnouncement.style.animation = '';
+                    
+                    startTimerCountdown(durationInSeconds);
+                }, 800);
+            }, 1000);
+        } else {
+            // Если без анимации, просто показываем таймер и запускаем отсчет
+            timerContainer.style.display = 'flex';
+            timerDisplay.style.opacity = '1';
+            startTimerCountdown(durationInSeconds);
+        }
+        
+        // Функция для запуска обратного отсчета таймера
+        function startTimerCountdown(duration) {
+            // Запускаем отсчет
+            const startTime = Date.now();
+            const endTime = startTime + (duration * 1000);
+            
+            // Обновляем таймер каждую секунду
+            currentTimerInterval = setInterval(() => {
+                // Вычисляем оставшееся время
+                const currentTime = Date.now();
+                const remainingTime = endTime - currentTime;
+                
+                if (remainingTime <= 0) {
+                    // Таймер закончился
+                    clearInterval(currentTimerInterval);
+                    currentTimerInterval = null;
+                    timerContainer.style.display = 'none';
+                    
+                    // Показываем уведомление "Чічічі Стоп Балаган"
+                    stopBalaganAnnouncement.style.display = 'block';
+                    stopBalaganAnnouncement.style.animation = 'stopBalaganAppear 0.5s forwards';
+                    
+                    // Через 1.5 секунды скрываем сообщение
+                    setTimeout(() => {
+                        stopBalaganAnnouncement.style.animation = 'stopBalaganDisappear 0.5s forwards';
                         
-                        // Показываем уведомление "Чічічі Стоп Балаган"
-                        stopBalaganAnnouncement.style.display = 'block';
-                        stopBalaganAnnouncement.style.animation = 'stopBalaganAppear 0.5s forwards';
-                        
-                        // Через 1.5 секунды скрываем сообщение
+                        // После завершения анимации полностью убираем элемент
                         setTimeout(() => {
-                            stopBalaganAnnouncement.style.animation = 'stopBalaganDisappear 0.5s forwards';
-                            
-                            // После завершения анимации полностью убираем элемент
-                            setTimeout(() => {
-                                stopBalaganAnnouncement.style.display = 'none';
-                                stopBalaganAnnouncement.style.animation = '';
-                            }, 500);
-                        }, 1500);
-                        
-                        return;
-                    }
+                            stopBalaganAnnouncement.style.display = 'none';
+                            stopBalaganAnnouncement.style.animation = '';
+                        }, 500);
+                    }, 1500);
+                    return;
+                }
                     
-                    // Преобразуем миллисекунды в минуты и секунды
-                    const minutes = Math.floor(remainingTime / 60000);
-                    const seconds = Math.floor((remainingTime % 60000) / 1000);
-                    
-                    // Отображаем время в формате MM:SS
-                    timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-                }, 1000);
+                // Преобразуем миллисекунды в минуты и секунды
+                const minutes = Math.floor(remainingTime / 60000);
+                const seconds = Math.floor((remainingTime % 60000) / 1000);
                 
-            }, 800); // Время анимации перемещения
-        }, 1000); // Время показа анимации в центре
+                // Отображаем время в формате MM:SS
+                timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }, 1000);
+        }
     }
     
     // Обработчик клика на кнопку "Балаган" (1 минута)
@@ -2220,47 +2233,47 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Обработчик клика на кнопку "Балаган" (30 секунд)
-    const balagan30SecBtn = document.getElementById('balagan-30sec-btn');
-    if (balagan30SecBtn) {
-        balagan30SecBtn.addEventListener('click', () => {
+    // Обработчик клика на кнопку "Таймер" (60 секунд)
+    if (timer60SecBtn) {
+        timer60SecBtn.addEventListener('click', () => {
             if (userRole !== 'host') {
-                showError('Тільки ведучий може використовувати кнопку "Балаган"');
+                showError('Тільки ведучий може використовувати кнопку таймера');
                 return;
             }
             
-            console.log('Host is starting a 30-second timer (Балаган)');
+            console.log('Host is starting a 60-second timer');
             
-            // Отправляем сообщение о начале "Балагана" всем участникам
+            // Отправляем сообщение о запуске таймера всем участникам
             sendMessage({
                 type: 'balagan',
-                duration: 30 // 30 секунд
+                duration: 60, // 60 секунд
+                showAnimation: false // Без анимации "Балаган"
             });
             
-            // Локально запускаем таймер для немедленной обратной связи
-            startTimer(30);
+            // Локально запускаем таймер без анимации
+            startTimer(60, false);
         });
     }
     
-    // Обработчик клика на кнопку "Балаган" (15 секунд)
-    const balagan15SecBtn = document.getElementById('balagan-15sec-btn');
-    if (balagan15SecBtn) {
-        balagan15SecBtn.addEventListener('click', () => {
+    // Обработчик клика на кнопку "Таймер" (30 секунд)
+    if (timer30SecBtn) {
+        timer30SecBtn.addEventListener('click', () => {
             if (userRole !== 'host') {
-                showError('Тільки ведучий може використовувати кнопку "Балаган"');
+                showError('Тільки ведучий може використовувати кнопку таймера');
                 return;
             }
             
-            console.log('Host is starting a 15-second timer (Балаган)');
+            console.log('Host is starting a 30-second timer');
             
-            // Отправляем сообщение о начале "Балагана" всем участникам
+            // Отправляем сообщение о запуске таймера всем участникам
             sendMessage({
                 type: 'balagan',
-                duration: 15 // 15 секунд
+                duration: 30, // 30 секунд
+                showAnimation: false // Без анимации "Балаган"
             });
             
-            // Локально запускаем таймер для немедленной обратной связи
-            startTimer(15);
+            // Локально запускаем таймер без анимации
+            startTimer(30, false);
         });
     }
     
