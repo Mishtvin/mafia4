@@ -215,8 +215,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 
             case 'user':
                 if (message.kind === 'add' && message.id !== serverId) {
-                    // New user joined, initiate connection
-                    initiateConnection(message.id);
+                    // New user joined, initiate connection only if our ID is "greater"
+                    // This prevents both peers from initiating at the same time
+                    if (serverId > message.id) {
+                        console.log(`Initiating connection as higher ID peer (${serverId} > ${message.id})`);
+                        initiateConnection(message.id);
+                    } else {
+                        console.log(`Waiting for connection from peer with higher ID (${message.id} > ${serverId})`);
+                    }
                 } else if (message.kind === 'delete' && peerConnections[message.id]) {
                     // User left, clean up connection
                     removePeer(message.id);
@@ -353,9 +359,30 @@ document.addEventListener('DOMContentLoaded', () => {
         const peerId = message.id;
         
         try {
-            if (!peerConnections[peerId]) {
-                console.log(`Creating new peer connection for ${peerId}`);
-                // Create new connection if it doesn't exist
+            // Check if message.sdp is valid and has the required properties
+            if (!message.sdp || typeof message.sdp !== 'object') {
+                console.error('Invalid SDP received:', message.sdp);
+                return;
+            }
+            
+            // Make a safe copy of the SDP object
+            const sdpObj = {
+                type: message.sdp.type,
+                sdp: message.sdp.sdp
+            };
+            
+            if (!sdpObj.type || !sdpObj.sdp) {
+                console.error('SDP missing required fields:', sdpObj);
+                return;
+            }
+            
+            console.log(`Processing ${sdpObj.type} from ${peerId}`);
+
+            // If this is an offer and we don't have a connection yet, create one
+            if (sdpObj.type === 'offer' && !peerConnections[peerId]) {
+                console.log(`Creating new peer connection for offer from ${peerId}`);
+                
+                // Create new connection
                 const pc = new RTCPeerConnection({
                     iceServers: [
                         { urls: 'stun:stun.l.google.com:19302' },
@@ -390,6 +417,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log(`Connection state with ${peerId}: ${pc.connectionState}`);
                     if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
                         removePeer(peerId);
+                    } else if (pc.connectionState === 'connected') {
+                        console.log(`Successfully connected to ${peerId}`);
                     }
                 };
                 
@@ -411,34 +440,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
             }
             
+            // If we still don't have a connection for this peer, we can't process the SDP
+            if (!peerConnections[peerId]) {
+                console.error(`Received ${sdpObj.type} but no connection exists for peer ${peerId}`);
+                return;
+            }
+            
             const pc = peerConnections[peerId];
             
-            // Check if message.sdp is valid and has the required properties
-            if (!message.sdp || typeof message.sdp !== 'object') {
-                console.error('Invalid SDP received:', message.sdp);
+            // Check the current connection state to avoid errors
+            const currentState = pc.signalingState;
+            console.log(`Current signaling state with ${peerId}: ${currentState}`);
+            
+            // Only process if it's a valid state transition
+            let canSetRemote = false;
+            
+            if (sdpObj.type === 'offer') {
+                // Can set remote offer if in 'stable' or 'have-remote-offer' state
+                canSetRemote = (currentState === 'stable' || currentState === 'have-remote-offer');
+            } else if (sdpObj.type === 'answer') {
+                // Can only set remote answer if in 'have-local-offer' state
+                canSetRemote = (currentState === 'have-local-offer');
+            }
+            
+            if (!canSetRemote) {
+                console.warn(`Cannot set remote ${sdpObj.type} in current state: ${currentState}`);
                 return;
             }
             
-            // Make a safe copy of the SDP object
-            const sdpObj = {
-                type: message.sdp.type,
-                sdp: message.sdp.sdp
-            };
-            
-            if (!sdpObj.type || !sdpObj.sdp) {
-                console.error('SDP missing required fields:', sdpObj);
-                return;
-            }
-            
-            console.log(`Processing ${sdpObj.type} from ${peerId}`);
             const sdp = new RTCSessionDescription(sdpObj);
             
+            // Set remote description and handle offer/answer
+            console.log(`Setting remote description (${sdpObj.type}) for ${peerId}`);
             pc.setRemoteDescription(sdp)
                 .then(() => {
                     console.log(`Remote description set for ${peerId}`);
+                    
+                    // If we received an offer, create and send an answer
                     if (sdp.type === 'offer') {
                         console.log(`Creating answer for ${peerId}`);
-                        // Create and send answer if we received an offer
                         return pc.createAnswer()
                             .then(answer => {
                                 console.log(`Setting local description for ${peerId}`);
@@ -452,11 +492,16 @@ document.addEventListener('DOMContentLoaded', () => {
                                     sdp: pc.localDescription
                                 });
                             });
+                    } else {
+                        console.log(`Successfully processed answer from ${peerId}`);
                     }
                 })
                 .catch(error => {
-                    console.error('Error handling SDP:', error);
-                    showError('Failed to establish connection with a participant.');
+                    console.error(`Error handling SDP (${sdpObj.type}) for ${peerId}:`, error);
+                    // Don't show error to user for every SDP issue, only if critical
+                    if (pc.iceConnectionState !== 'connected' && pc.connectionState !== 'connected') {
+                        showError('Failed to establish connection with a participant.');
+                    }
                 });
         } catch (error) {
             console.error('Exception in handleSDP:', error);

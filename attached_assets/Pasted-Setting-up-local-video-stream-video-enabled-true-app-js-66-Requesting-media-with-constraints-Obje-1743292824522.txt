@@ -1,0 +1,64 @@
+Setting up local video stream, video enabled: true
+app.js:66 Requesting media with constraints: Object
+app.js:68 Successfully obtained media stream with tracks: Array(1)
+app.js:104 Local video metadata loaded 1280 x 720
+app.js:109 Local video started playing
+app.js:125 Local video playing successfully
+app.js:144 Connecting to WebSocket: wss://a24b5479-176a-4d30-a155-f80e9a0ff789-00-lqi6cz3tme3r.worf.replit.dev
+app.js:148 WebSocket connection established
+app.js:180 Received message: Object
+app.js:186 Connected to server with ID: mvj7jetul
+app.js:180 Received message: Object
+app.js:244 Initiating connection to peer: 9cj46m793
+app.js:261 Adding 1 local tracks to connection
+app.js:322 Creating offer for 9cj46m793
+app.js:330 Setting local description for 9cj46m793
+app.js:334 Sending offer to 9cj46m793
+app.js:285 ICE gathering state with 9cj46m793: gathering
+11app.js:272 Generated ICE candidate for 9cj46m793
+app.js:180 Received message: Object
+app.js:433 Processing offer from 9cj46m793
+app.js:180 Received message: Object
+app.js:180 Received message: Object
+app.js:313 Received 1 track(s) from 9cj46m793
+app.js:469 Creating video element for peer 9cj46m793 with stream: MediaStream
+app.js:438 Remote description set for 9cj46m793
+app.js:440 Creating answer for 9cj46m793
+app.js:180 Received message: Object
+app.js:180 Received message: Object
+app.js:180 Received message: Object
+app.js:444 Setting local description for 9cj46m793
+app.js:285 ICE gathering state with 9cj46m793: new
+app.js:448 Sending answer to 9cj46m793
+app.js:285 ICE gathering state with 9cj46m793: gathering
+app.js:290 ICE connection state with 9cj46m793: checking
+2app.js:272 Generated ICE candidate for 9cj46m793
+app.js:302 Connection state with 9cj46m793: connecting
+3app.js:272 Generated ICE candidate for 9cj46m793
+app.js:180 Received message: Object
+app.js:272 Generated ICE candidate for 9cj46m793
+app.js:180 Received message: Object
+app.js:433 Processing answer from 9cj46m793
+app.js:458 Error handling SDP: InvalidStateError: Failed to execute 'setRemoteDescription' on 'RTCPeerConnection': Failed to set remote answer sdp: Called in wrong state: stable
+(anonymous) @ app.js:458Understand this errorAI
+app.js:180 Received message: Object
+app.js:180 Received message: Object
+app.js:180 Received message: Object
+app.js:180 Received message: Object
+app.js:180 Received message: Object
+5app.js:272 Generated ICE candidate for 9cj46m793
+app.js:290 ICE connection state with 9cj46m793: connected
+app.js:285 ICE gathering state with 9cj46m793: complete
+app.js:279 Finished generating ICE candidates for 9cj46m793
+app.js:302 Connection state with 9cj46m793: failed
+app.js:304 Connection to 9cj46m793 failed or closed, removing peer
+app.js:180 Received message: Object
+app.js:520 Error playing video from peer 9cj46m793: AbortError: The play() request was interrupted because the media was removed from the document. https://goo.gl/LdLk22
+(anonymous) @ app.js:520Understand this errorAI
+app.js:497 Video metadata loaded for peer 9cj46m793
+app.js:180 Received message: Object
+app.js:180 Received message: Object
+app.js:180 Received message: Object
+app.js:180 Received message: Object
+app.js:180 Received message: Object
+app.js:524 Retry successful for peer 9cj46m793
