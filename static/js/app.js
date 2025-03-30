@@ -946,17 +946,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (localVideo) {
             const label = localVideo.querySelector('.video-label');
             if (label) {
-                // Добавляем порядковый номер перед именем и метку ведущего в конце
-                const orderPrefix = userOrderIndex ? `${userOrderIndex}. ` : '';
+                // Добавляем порядковый номер перед именем только для игроков (не ведущего)
+                // и метку ведущего в конце для ведущего
+                let displayName = '';
                 
-                // Для роли ведущего добавляем (ведущий) после имени
+                // Для роли ведущего не добавляем номер, только (ведущий) после имени
                 if (userRole === 'host') {
-                    console.log(`DEBUG: Setting label for HOST: ${orderPrefix}You (${username}) (ведущий)`);
-                    label.textContent = `${orderPrefix}You (${username}) (ведущий)`;
+                    displayName = `You (${username}) (ведущий)`;
+                    console.log(`DEBUG: Setting label for HOST: ${displayName}`);
                 } else {
-                    console.log(`DEBUG: Setting label for PLAYER: ${orderPrefix}You (${username})`);
-                    label.textContent = `${orderPrefix}You (${username})`;
+                    // Для игрока добавляем порядковый номер перед именем
+                    const orderPrefix = userOrderIndex ? `${userOrderIndex}. ` : '';
+                    displayName = `${orderPrefix}You (${username})`;
+                    console.log(`DEBUG: Setting label for PLAYER: ${displayName}`);
                 }
+                
+                label.textContent = displayName;
                 console.log(`DEBUG: Final label content: "${label.textContent}"`);
             } else {
                 console.error("DEBUG: Could not find .video-label element in localVideo");
@@ -986,26 +991,28 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        // Добавляем порядковый номер перед именем
-        const orderPrefix = peer.orderIndex ? `${peer.orderIndex}. ` : '';
+        let displayName = '';
         
-        if (localName) {
-            // Добавляем (ведущий) для пиров с ролью host
-            if (peer && (peer.role === 'host' || peer.isHost)) {
-                label.textContent = `${orderPrefix}${localName} (ведущий)`;
+        // Для ведущего не добавляем порядковый номер, только (ведущий)
+        if (peer.role === 'host' || peer.isHost) {
+            if (localName) {
+                // Если есть локальное имя, используем его
+                displayName = `${localName} (ведущий)`;
             } else {
-                label.textContent = `${orderPrefix}${localName}`;
-            }
-        } else if (peer) {
-            // Добавляем (ведущий) для пиров с ролью host
-            if (peer.role === 'host' || peer.isHost) {
-                label.textContent = `${orderPrefix}${peer.username} (ведущий)`;
-            } else {
-                label.textContent = `${orderPrefix}${peer.username}`;
+                displayName = `${peer.username} (ведущий)`;
             }
         } else {
-            label.textContent = 'Participant';
+            // Для игроков добавляем порядковый номер перед именем
+            const orderPrefix = peer.orderIndex ? `${peer.orderIndex}. ` : '';
+            
+            if (localName) {
+                displayName = `${orderPrefix}${localName}`;
+            } else {
+                displayName = `${orderPrefix}${peer.username}`;
+            }
         }
+        
+        label.textContent = displayName;
         
         // Убираем класс host для видео, т.к. теперь показываем роль в подписи имени
         videoElement.classList.remove('host');
@@ -1405,19 +1412,24 @@ document.addEventListener('DOMContentLoaded', () => {
             let displayName = 'Participant';
             let isHost = peer && (peer.role === 'host' || peer.isHost);
             
-            // Добавляем порядковый номер перед именем
-            const orderPrefix = peer && peer.orderIndex ? `${peer.orderIndex}. ` : '';
-            
-            if (localName) {
-                // Если есть локальное имя, используем его
-                displayName = orderPrefix + localName;
-            } else if (peer && peer.username) {
-                displayName = orderPrefix + peer.username;
-            }
-            
-            // Добавляем метку ведущего, если у пира роль "host"
+            // Для ведущего не добавляем порядковый номер, только (ведущий)
             if (isHost) {
-                displayName += ' (ведущий)';
+                if (localName) {
+                    // Если есть локальное имя, используем его
+                    displayName = localName + ' (ведущий)';
+                } else if (peer && peer.username) {
+                    displayName = peer.username + ' (ведущий)';
+                }
+            } else {
+                // Для игроков добавляем порядковый номер перед именем
+                const orderPrefix = peer && peer.orderIndex ? `${peer.orderIndex}. ` : '';
+                
+                if (localName) {
+                    // Если есть локальное имя, используем его
+                    displayName = orderPrefix + localName;
+                } else if (peer && peer.username) {
+                    displayName = orderPrefix + peer.username;
+                }
             }
             
             console.log(`DEBUG: Creating remote video for peer ${peerId}, isHost=${isHost}, displayName="${displayName}"`);
@@ -1518,8 +1530,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const peerA = peers.get(peerIdA);
             const peerB = peers.get(peerIdB);
             
-            const orderA = peerA ? peerA.orderIndex : 0;
-            const orderB = peerB ? peerB.orderIndex : 0;
+            // Ведущий (host) всегда идет первым после локального видео (в самом начале)
+            if (peerA && (peerA.role === 'host' || peerA.isHost) && 
+                !(peerB && (peerB.role === 'host' || peerB.isHost))) {
+                return -1;
+            }
+            
+            if (peerB && (peerB.role === 'host' || peerB.isHost) && 
+                !(peerA && (peerA.role === 'host' || peerA.isHost))) {
+                return 1;
+            }
+            
+            // Если оба ведущие или оба игроки - сортируем по порядковому номеру
+            const orderA = peerA ? peerA.orderIndex || 0 : 0;
+            const orderB = peerB ? peerB.orderIndex || 0 : 0;
             
             // Сортировка по возрастанию номера
             return orderA - orderB;

@@ -295,16 +295,23 @@ function handleJoin(clientId, message) {
     if (!room.participants.includes(clientId)) {
         room.participants.push(clientId);
         
-        // Назначаем порядковый номер - если это новый участник, берем максимальный существующий номер + 1
-        let maxOrderIndex = 0;
-        room.participants.forEach(id => {
-            const participant = clients.get(id);
-            if (participant && participant.orderIndex > maxOrderIndex) {
-                maxOrderIndex = participant.orderIndex;
-            }
-        });
-        client.orderIndex = maxOrderIndex + 1;
-        console.log(`Assigned order index ${client.orderIndex} to client ${clientId}`);
+        // Назначаем порядковый номер только игрокам (не ведущим)
+        if (client.role === 'player') {
+            // Берем максимальный существующий номер + 1 среди игроков
+            let maxOrderIndex = 0;
+            room.participants.forEach(id => {
+                const participant = clients.get(id);
+                if (participant && participant.role === 'player' && participant.orderIndex > maxOrderIndex) {
+                    maxOrderIndex = participant.orderIndex;
+                }
+            });
+            client.orderIndex = maxOrderIndex + 1;
+            console.log(`Assigned order index ${client.orderIndex} to player ${clientId}`);
+        } else {
+            // Ведущему не присваиваем порядковый номер
+            client.orderIndex = null;
+            console.log(`Host ${clientId} does not get an order index`);
+        }
     }
     
     // Собираем полный список участников, исключая текущего клиента
