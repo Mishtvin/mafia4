@@ -54,6 +54,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const localBitrateValue = document.getElementById('local-bitrate-value');
     const applyLocalVideoSettingsBtn = document.getElementById('apply-local-video-settings-btn');
     const localVideoSettingsBtn = document.getElementById('local-video-settings-btn');
+    
+    // Элементы сайдбара
+    const sidebarToggleBtn = document.getElementById('sidebar-toggle');
+    const closeSidebarBtn = document.getElementById('close-sidebar');
+    const controlSidebar = document.getElementById('control-sidebar');
+    const sidebarVideoQualitySelect = document.getElementById('sidebar-video-quality');
+    const sidebarCustomVideoSettings = document.getElementById('sidebar-custom-video-settings');
+    const sidebarVideoWidthInput = document.getElementById('sidebar-video-width');
+    const sidebarVideoHeightInput = document.getElementById('sidebar-video-height');
+    const sidebarVideoBitrateInput = document.getElementById('sidebar-video-bitrate');
+    const applySidebarVideoSettingsBtn = document.getElementById('apply-sidebar-video-settings-btn');
+    const sidebarToggleVideoBtn = document.getElementById('sidebar-toggle-video');
+    const sidebarToggleKilledBtn = document.getElementById('sidebar-toggle-killed');
+    const sidebarRenameBtn = document.getElementById('sidebar-rename-btn');
 
     // WebRTC and Galène variables
     let socket = null;
@@ -76,7 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
         low: { width: 320, height: 180, bitrate: 250 },
         medium: { width: 640, height: 480, bitrate: 1000 },
         high: { width: 1280, height: 720, bitrate: 2000 },
-        hd: { width: 1920, height: 1080, bitrate: 3000 }
+        hd: { width: 1920, height: 1080, bitrate: 3000 },
+        uhd: { width: 3840, height: 2160, bitrate: 8000 }
     };
     
     // Текущие настройки видео для пиров (ID пира -> настройки)
@@ -518,6 +533,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 loginSection.style.display = 'none';
                 conferenceSection.style.display = 'block';
                 currentRoomSpan.textContent = roomname;
+                
+                // Показать кнопку переключения сайдбара
+                sidebarToggleBtn.style.display = 'block';
                 
                 // Показать имя пользователя в поле изменения имени
                 newUsernameInput.value = username;
@@ -1343,6 +1361,149 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+    
+    // Функции управления сайдбаром
+    function showControlSidebar() {
+        controlSidebar.classList.add('show');
+        sidebarToggleBtn.style.display = 'none';
+        
+        // Инициализировать настройки сайдбара
+        initSidebarSettings();
+    }
+    
+    function hideControlSidebar() {
+        controlSidebar.classList.remove('show');
+        sidebarToggleBtn.style.display = 'block';
+    }
+    
+    function initSidebarSettings() {
+        // Определить текущее качество видео и заполнить форму
+        const videoTrack = localStream && localStream.getVideoTracks()[0];
+        if (videoTrack) {
+            const settings = videoTrack.getSettings();
+            
+            // Определить, какой пресет выбрать
+            let preset = 'medium';
+            if (settings.width) {
+                if (settings.width <= 320) preset = 'low';
+                else if (settings.width <= 640) preset = 'medium';
+                else if (settings.width <= 1280) preset = 'high';
+                else if (settings.width <= 1920) preset = 'hd';
+                else preset = 'uhd';
+            }
+            
+            // Установить значения в форме
+            sidebarVideoQualitySelect.value = preset;
+            sidebarCustomVideoSettings.style.display = 'none';
+            
+            // Установить видимые размеры
+            sidebarVideoWidthInput.value = settings.width || videoQualityPresets[preset].width;
+            sidebarVideoHeightInput.value = settings.height || videoQualityPresets[preset].height;
+            
+            // Установить битрейт
+            const bitrate = window.customBitrate || videoQualityPresets[preset].bitrate;
+            sidebarVideoBitrateInput.value = bitrate;
+            
+            // Обновить состояние переключателей
+            sidebarToggleVideoBtn.innerHTML = videoEnabled ? 
+                '<span data-feather="video-off"></span> Toggle Video' : 
+                '<span data-feather="video"></span> Toggle Video';
+                
+            sidebarToggleKilledBtn.innerHTML = isKilled ? 
+                '<span data-feather="user"></span> Unmark as Disconnected' : 
+                '<span data-feather="user-x"></span> Mark as Disconnected';
+                
+            feather.replace();
+        }
+    }
+    
+    // Обработчики для сайдбара
+    sidebarToggleBtn.addEventListener('click', showControlSidebar);
+    closeSidebarBtn.addEventListener('click', hideControlSidebar);
+    
+    // Показать/скрыть пользовательские настройки видео для сайдбара
+    sidebarVideoQualitySelect.addEventListener('change', () => {
+        const selectedQuality = sidebarVideoQualitySelect.value;
+        sidebarCustomVideoSettings.style.display = selectedQuality === 'custom' ? 'block' : 'none';
+        
+        if (selectedQuality !== 'custom') {
+            const preset = videoQualityPresets[selectedQuality];
+            if (preset) {
+                sidebarVideoWidthInput.value = preset.width;
+                sidebarVideoHeightInput.value = preset.height;
+                sidebarVideoBitrateInput.value = preset.bitrate;
+            }
+        }
+    });
+    
+    // Применить настройки видео из сайдбара
+    applySidebarVideoSettingsBtn.addEventListener('click', async () => {
+        const selectedQuality = sidebarVideoQualitySelect.value;
+        let videoConstraints = {};
+        let bitrate = 0;
+        
+        if (selectedQuality === 'custom') {
+            const width = parseInt(sidebarVideoWidthInput.value, 10);
+            const height = parseInt(sidebarVideoHeightInput.value, 10);
+            bitrate = parseInt(sidebarVideoBitrateInput.value, 10);
+            
+            videoConstraints = {
+                width: { ideal: width },
+                height: { ideal: height },
+                facingMode: 'user'
+            };
+        } else {
+            const preset = videoQualityPresets[selectedQuality];
+            videoConstraints = {
+                width: { ideal: preset.width },
+                height: { ideal: preset.height },
+                facingMode: 'user'
+            };
+            bitrate = preset.bitrate;
+        }
+        
+        // Сохраняем битрейт для будущего использования
+        window.customBitrate = bitrate;
+        
+        try {
+            // Остановить текущий стрим
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+            
+            // Получить новый стрим с новыми настройками
+            const newStream = await navigator.mediaDevices.getUserMedia({
+                video: videoConstraints,
+                audio: false
+            });
+            
+            // Заменить локальный стрим
+            localStream = newStream;
+            
+            // Обновить видео элемент
+            const videoElement = localVideo.querySelector('video');
+            videoElement.srcObject = newStream;
+            
+            // Обновить видео треки во всех peer connections
+            updateVideoTracksInPeerConnections(bitrate);
+            
+            // Закрыть сайдбар
+            hideControlSidebar();
+            
+        } catch (error) {
+            console.error('Error applying video settings from sidebar:', error);
+            showError(`Failed to apply video settings: ${error.message}`);
+        }
+    });
+    
+    // Синхронизация кнопок с основными
+    sidebarToggleVideoBtn.addEventListener('click', () => {
+        toggleVideoBtn.click();
+    });
+    
+    sidebarToggleKilledBtn.addEventListener('click', () => {
+        toggleKilledBtn.click();
+    });
 
     // Leave button click handler
     leaveBtn.addEventListener('click', () => {
@@ -1360,9 +1521,15 @@ document.addEventListener('DOMContentLoaded', () => {
             killed: isKilled
         });
         
-        // Обновить кнопку
-        toggleKilledBtn.textContent = isKilled ? 
-            'Восстановить' : 'Отключиться';
+        // Обновить кнопки
+        const killedIconHTML = isKilled ? 
+            '<span data-feather="user"></span> Unmark as Disconnected' : 
+            '<span data-feather="user-x"></span> Mark as Disconnected';
+            
+        toggleKilledBtn.innerHTML = killedIconHTML;
+        sidebarToggleKilledBtn.innerHTML = killedIconHTML;
+        
+        feather.replace();
         
         // Обновить отображение в видео элементе (мгновенный отклик)
         updateLocalKilledStatus();

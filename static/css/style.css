@@ -139,6 +139,73 @@ body {
     margin-top: 10px;
 }
 
-#peer-bitrate-value {
+#peer-bitrate-value, #local-bitrate-value {
     font-weight: bold;
+}
+
+/* Sidebar styles */
+.control-sidebar {
+    position: fixed;
+    height: 100%;
+    width: 320px;
+    top: 0;
+    right: -320px;
+    background-color: #fff;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+    transition: right 0.3s ease;
+    overflow-y: auto;
+    z-index: 1050;
+    padding: 20px;
+}
+
+.control-sidebar.show {
+    right: 0;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+}
+
+.sidebar-header h4 {
+    margin: 0;
+}
+
+.sidebar-toggle-btn {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1040;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-section {
+    margin-bottom: 25px;
+}
+
+.sidebar-section h5 {
+    margin-bottom: 15px;
+    border-bottom: 1px dashed #ccc;
+    padding-bottom: 8px;
+}
+
+@media (max-width: 576px) {
+    .control-sidebar {
+        width: 100%;
+        right: -100%;
+    }
+    
+    .control-sidebar.show {
+        right: 0;
+    }
 }

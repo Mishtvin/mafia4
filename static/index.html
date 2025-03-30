@@ -15,6 +15,72 @@
                 <h1 class="text-center mb-4">Video Conference</h1>
             </div>
         </div>
+        
+        <!-- Sidebar Toggle Button -->
+        <button id="sidebar-toggle" class="btn btn-primary sidebar-toggle-btn" style="display: none;">
+            <span data-feather="settings"></span>
+        </button>
+        
+        <!-- Video Controls Sidebar -->
+        <div id="control-sidebar" class="control-sidebar">
+            <div class="sidebar-header">
+                <h4>Video Controls</h4>
+                <button id="close-sidebar" class="btn-close"></button>
+            </div>
+            
+            <div class="sidebar-section">
+                <h5>Your Video Settings</h5>
+                <div class="mb-3">
+                    <label for="sidebar-video-quality" class="form-label">Video Quality</label>
+                    <select class="form-select" id="sidebar-video-quality">
+                        <option value="low">Low (180p)</option>
+                        <option value="medium" selected>Medium (480p)</option>
+                        <option value="high">High (720p)</option>
+                        <option value="hd">HD (1080p)</option>
+                        <option value="uhd">4K (2160p)</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+                <div id="sidebar-custom-video-settings" class="mb-3" style="display: none;">
+                    <div class="mb-3">
+                        <label for="sidebar-video-width" class="form-label">Width</label>
+                        <input type="number" class="form-control" id="sidebar-video-width" value="640">
+                    </div>
+                    <div class="mb-3">
+                        <label for="sidebar-video-height" class="form-label">Height</label>
+                        <input type="number" class="form-control" id="sidebar-video-height" value="480">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="sidebar-video-bitrate" class="form-label">Bitrate (kbps)</label>
+                    <input type="number" class="form-control" id="sidebar-video-bitrate" value="1000" min="100" max="8000">
+                    <small class="text-muted">Range: 100-8000 kbps</small>
+                </div>
+                <button type="button" class="btn btn-primary w-100" id="apply-sidebar-video-settings-btn">
+                    Apply Settings
+                </button>
+                <div class="alert alert-info mt-3">
+                    <small>Changing video settings will reconnect your camera. This may cause a brief interruption in your video stream.</small>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="sidebar-section">
+                <h5>Quick Actions</h5>
+                <div class="d-grid gap-2">
+                    <button id="sidebar-toggle-video" class="btn btn-primary">
+                        <span data-feather="video-off"></span> Toggle Video
+                    </button>
+                    <button id="sidebar-toggle-killed" class="btn btn-warning">
+                        <span data-feather="user-x"></span> Toggle Killed
+                    </button>
+                    <button id="sidebar-rename-btn" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#rename-modal">
+                        <span data-feather="edit"></span> Rename
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- Login Section -->
         <div id="login-section" class="row justify-content-center mb-4">
@@ -44,6 +110,7 @@
                                     <option value="medium" selected>Medium (480p)</option>
                                     <option value="high">High (720p)</option>
                                     <option value="hd">HD (1080p)</option>
+                                    <option value="uhd">4K (2160p)</option>
                                     <option value="custom">Custom</option>
                                 </select>
                             </div>
@@ -184,6 +251,7 @@
                                 <option value="medium" selected>Medium (480p)</option>
                                 <option value="high">High (720p)</option>
                                 <option value="hd">HD (1080p)</option>
+                                <option value="uhd">4K (2160p)</option>
                                 <option value="custom">Custom</option>
                             </select>
                         </div>
@@ -199,13 +267,8 @@
                         </div>
                         <div class="mb-3">
                             <label for="peer-video-bitrate" class="form-label">Bitrate (kbps)</label>
-                            <input type="range" class="form-range" id="peer-video-bitrate-slider" min="100" max="3000" step="100" value="1000">
-                            <div class="d-flex justify-content-between">
-                                <span>100 kbps</span>
-                                <span id="peer-bitrate-value">1000 kbps</span>
-                                <span>3000 kbps</span>
-                            </div>
-                            <input type="number" class="form-control mt-2" id="peer-video-bitrate" value="1000">
+                            <input type="number" class="form-control" id="peer-video-bitrate" value="1000" min="100" max="8000">
+                            <small class="text-muted">Range: 100-8000 kbps</small>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -232,6 +295,7 @@
                                 <option value="medium" selected>Medium (480p)</option>
                                 <option value="high">High (720p)</option>
                                 <option value="hd">HD (1080p)</option>
+                                <option value="uhd">4K (2160p)</option>
                                 <option value="custom">Custom</option>
                             </select>
                         </div>
@@ -247,13 +311,8 @@
                         </div>
                         <div class="mb-3">
                             <label for="local-video-bitrate" class="form-label">Bitrate (kbps)</label>
-                            <input type="range" class="form-range" id="local-video-bitrate-slider" min="100" max="3000" step="100" value="1000">
-                            <div class="d-flex justify-content-between">
-                                <span>100 kbps</span>
-                                <span id="local-bitrate-value">1000 kbps</span>
-                                <span>3000 kbps</span>
-                            </div>
-                            <input type="number" class="form-control mt-2" id="local-video-bitrate" value="1000">
+                            <input type="number" class="form-control" id="local-video-bitrate" value="1000" min="100" max="8000">
+                            <small class="text-muted">Range: 100-8000 kbps</small>
                         </div>
                         <div class="alert alert-info">
                             <small>Changing video settings will reconnect your camera. This may cause a brief interruption in your video stream.</small>
