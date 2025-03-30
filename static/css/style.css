@@ -246,6 +246,44 @@ body {
     color: #adb5bd !important;
 }
 
+/* Role indicator styles */
+.role-indicator {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.role-indicator.host {
+    background-color: #8a2be2; /* Purple for host */
+    color: white;
+}
+
+.role-indicator.player {
+    background-color: #3498db; /* Blue for player */
+    color: white;
+}
+
+/* Host badge for videos */
+.video-item.host::after {
+    content: "ВЕДУЩИЙ";
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #8a2be2;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
 /* Username editing styles */
 .username-edit-container {
     position: absolute;

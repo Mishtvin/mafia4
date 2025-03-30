@@ -3,7 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     feather.replace();
     
     // DOM elements
-    const joinForm = document.getElementById('join-form');
+    const joinAsPlayerBtn = document.getElementById('join-as-player-btn');
+    const joinAsHostBtn = document.getElementById('join-as-host-btn');
     const cameraSelect = document.getElementById('camera-select');
     const loginSection = document.getElementById('login-section');
     const conferenceSection = document.getElementById('conference-section');
@@ -72,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let serverId = null;
     let videoEnabled = true;
     let isKilled = false;  // Состояние "отключен/убит"
+    let userRole = 'player'; // Роль пользователя ('player' или 'host')
     
     // Список доступных камер и выбранная камера
     let availableCameras = [];
@@ -389,34 +391,52 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${randomAdj}${randomNoun}${randomNumber}`;
     }
 
-    // Join form submission handler
-    if (joinForm) {
-        joinForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
+    // Роль пользователя уже определена ранее (player или host)
+    
+    // Обработчики кнопок входа с ролями
+    if (joinAsPlayerBtn) {
+        joinAsPlayerBtn.addEventListener('click', async () => {
             // Генерируем случайное имя пользователя
             username = generateRandomUsername();
             roomname = 'default'; // Всегда используем комнату default
             videoEnabled = true;  // Всегда включаем видео
+            userRole = 'player';  // Устанавливаем роль игрока
             
-            // Задаем настройки видео по умолчанию (средние)
-            const preset = videoQualityPresets.medium;
-            let videoConstraints = {
-                width: { ideal: preset.width },
-                height: { ideal: preset.height },
-                facingMode: 'user'
-            };
-            
-            // Сохраняем битрейт для будущего использования
-            window.customBitrate = preset.bitrate;
-            
-            try {
-                await setupLocalStream(videoConstraints);
-                connectToGalene();
-            } catch (error) {
-                showError(`Failed to access camera: ${error.message}. Please make sure your camera is connected and you've granted permission to use it.`);
-            }
+            await joinConference();
         });
+    }
+    
+    if (joinAsHostBtn) {
+        joinAsHostBtn.addEventListener('click', async () => {
+            // Генерируем случайное имя пользователя
+            username = generateRandomUsername();
+            roomname = 'default'; // Всегда используем комнату default
+            videoEnabled = true;  // Всегда включаем видео
+            userRole = 'host';    // Устанавливаем роль ведущего
+            
+            await joinConference();
+        });
+    }
+    
+    // Функция для подключения к конференции
+    async function joinConference() {
+        // Задаем настройки видео по умолчанию (средние)
+        const preset = videoQualityPresets.medium;
+        let videoConstraints = {
+            width: { ideal: preset.width },
+            height: { ideal: preset.height },
+            facingMode: 'user'
+        };
+            
+        // Сохраняем битрейт для будущего использования
+        window.customBitrate = preset.bitrate;
+        
+        try {
+            await setupLocalStream(videoConstraints);
+            connectToGalene();
+        } catch (error) {
+            showError(`Failed to access camera: ${error.message}. Please make sure your camera is connected and you've granted permission to use it.`);
+        }
     }
 
     // Set up local video stream
@@ -541,6 +561,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Create local video element
             localVideo = document.createElement('div');
             localVideo.className = 'video-item';
+            // Если пользователь - ведущий, добавим соответствующий класс
+            if (userRole === 'host') {
+                localVideo.classList.add('host');
+            }
             localVideo.innerHTML = `
                 <video autoplay muted playsinline></video>
                 <div class="video-label" id="local-username-label">You (${username})</div>
@@ -601,7 +625,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 kind: 'join',
                 group: roomname,
                 username: username,
-                password: ''
+                password: '',
+                role: userRole // Добавляем роль пользователя
             });
         };
         
@@ -654,6 +679,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 conferenceSection.style.display = 'block';
                 currentRoomSpan.textContent = roomname;
                 
+                // Обновить роль пользователя в соответствии с подтверждением сервера
+                userRole = message.role || 'player';
+                console.log(`Joined as ${userRole}`);
+                
+                // Добавить в интерфейс индикатор роли пользователя
+                const roleIndicator = document.createElement('div');
+                roleIndicator.id = 'role-indicator';
+                roleIndicator.className = `role-indicator ${userRole}`;
+                roleIndicator.textContent = userRole === 'host' ? 'Ведущий' : 'Игрок';
+                document.body.appendChild(roleIndicator);
+                
                 // Обновить название комнаты в сайдбаре
                 updateRoomInfo(roomname);
                 
@@ -695,7 +731,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         peers.set(user.id, {
                             id: user.id,
                             username: user.username,
-                            killed: user.killed || false
+                            killed: user.killed || false,
+                            role: user.role || 'player',
+                            isHost: user.role === 'host'
                         });
                         
                         // Инициировать соединение
@@ -712,11 +750,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 
             case 'user':
                 if (message.kind === 'add' && message.id !== serverId) {
-                    // Добавляем нового пира в список
+                    // Добавляем нового пира в список с информацией о роли
                     peers.set(message.id, {
                         id: message.id,
                         username: message.username,
-                        killed: message.killed || false
+                        killed: message.killed || false,
+                        role: message.role || 'player',
+                        isHost: message.isHost || false
                     });
                     
                     // Обновить выпадающий список для переименования
@@ -821,6 +861,42 @@ document.addEventListener('DOMContentLoaded', () => {
                     updateLocalKilledStatus();
                 }
                 break;
+                
+            case 'host_left':
+                // Когда ведущий покидает комнату
+                showError(message.message || "Ведущий покинул комнату");
+                
+                // Если мы игрок, отображаем возможность стать ведущим
+                if (userRole === 'player') {
+                    // Создаем кнопку стать ведущим
+                    const becomeHostBtn = document.createElement('button');
+                    becomeHostBtn.id = 'become-host-btn';
+                    becomeHostBtn.className = 'btn btn-success';
+                    becomeHostBtn.textContent = 'Стать ведущим';
+                    becomeHostBtn.style.position = 'fixed';
+                    becomeHostBtn.style.top = '10px';
+                    becomeHostBtn.style.right = '10px';
+                    becomeHostBtn.style.zIndex = '1000';
+                    
+                    becomeHostBtn.addEventListener('click', () => {
+                        // Отправка запроса на изменение роли
+                        userRole = 'host';
+                        sendMessage({
+                            type: 'join',
+                            kind: 'join',
+                            group: roomname,
+                            username: username,
+                            password: '',
+                            role: 'host'
+                        });
+                        
+                        // Убираем кнопку
+                        becomeHostBtn.remove();
+                    });
+                    
+                    document.body.appendChild(becomeHostBtn);
+                }
+                break;
         }
     }
     
@@ -855,6 +931,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const label = localVideo.querySelector('.video-label');
             if (label) {
                 label.textContent = `You (${username})`;
+            }
+            
+            // Обновить класс роли
+            if (userRole === 'host') {
+                localVideo.classList.add('host');
+            } else {
+                localVideo.classList.remove('host');
             }
         }
     }
@@ -1287,6 +1370,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Если пир имеет статус "убит", добавить соответствующий класс
             if (peer && peer.killed) {
                 videoItem.classList.add('killed');
+            }
+            
+            // Если пир имеет роль ведущего, добавить соответствующий класс
+            if (peer && (peer.role === 'host' || peer.isHost)) {
+                videoItem.classList.add('host');
             }
             
             videoItem.innerHTML = `

@@ -35,7 +35,8 @@ wss.on('connection', (ws) => {
         ws: ws,
         username: null,
         room: null,
-        killed: false // Статус "отключенный/убитый"
+        killed: false, // Статус "отключенный/убитый"
+        role: 'player' // Роль по умолчанию - 'player' (может быть 'player' или 'host')
     });
     
     // Send initial connection confirmation
@@ -102,14 +103,30 @@ wss.on('connection', (ws) => {
             // Notify others in the room
             const room = rooms.get(client.room);
             if (room) {
+                // Проверяем, не был ли это ведущий
+                const wasHost = (client.role === 'host' && room.hostId === clientId);
+                
                 // Remove from room
                 room.participants = room.participants.filter(id => id !== clientId);
+                
+                // Если это был ведущий, освобождаем роль ведущего в комнате
+                if (wasHost) {
+                    room.hostId = null;
+                    console.log(`Host ${clientId} disconnected from room ${client.room}, host role is now available`);
+                    
+                    // Уведомляем всех в комнате, что ведущий отключился
+                    broadcastToRoom(client.room, {
+                        type: 'host_left',
+                        message: 'Ведущий покинул комнату'
+                    });
+                }
                 
                 // Notify other participants
                 broadcastToRoom(client.room, {
                     type: 'user',
                     kind: 'delete',
-                    id: clientId
+                    id: clientId,
+                    wasHost: wasHost
                 }, clientId);
                 
                 // If room is empty, delete it
@@ -235,6 +252,7 @@ function handleJoin(clientId, message) {
     
     const roomName = message.group || 'default';
     const username = message.username || 'Anonymous';
+    const requestedRole = message.role || 'player'; // Запрошенная роль (player или host)
     
     // Store client info
     client.username = username;
@@ -244,11 +262,33 @@ function handleJoin(clientId, message) {
     if (!rooms.has(roomName)) {
         rooms.set(roomName, {
             name: roomName,
-            participants: []
+            participants: [],
+            hostId: null // ID ведущего (если есть)
         });
     }
     
     const room = rooms.get(roomName);
+    
+    // Определяем роль клиента
+    if (requestedRole === 'host') {
+        // Проверяем, есть ли уже ведущий в комнате
+        if (room.hostId && room.participants.includes(room.hostId) && 
+            room.hostId !== clientId) {
+            // Уже есть ведущий, отклоняем запрос
+            sendToClient(client.ws, {
+                type: 'error',
+                message: 'В комнате уже есть ведущий. Вы будете подключены как игрок.'
+            });
+            client.role = 'player';
+        } else {
+            // Назначаем этого клиента ведущим
+            client.role = 'host';
+            room.hostId = clientId;
+            console.log(`Client ${clientId} assigned as host in room ${roomName}`);
+        }
+    } else {
+        client.role = 'player';
+    }
     
     // Add to room - проверяем, не было ли уже этого участника в комнате
     if (!room.participants.includes(clientId)) {
@@ -264,7 +304,8 @@ function handleJoin(clientId, message) {
             return {
                 id: id,
                 username: participant.username,
-                killed: participant.killed
+                killed: participant.killed,
+                role: participant.role
             };
         })
         .filter(p => p !== null);
@@ -274,7 +315,9 @@ function handleJoin(clientId, message) {
         type: 'joined',
         id: clientId,
         room: roomName,
-        users: otherParticipants
+        users: otherParticipants,
+        role: client.role,
+        hostId: room.hostId
     });
     
     // Notify others
@@ -283,7 +326,9 @@ function handleJoin(clientId, message) {
         kind: 'add',
         id: clientId,
         username: username,
-        killed: client.killed
+        killed: client.killed,
+        role: client.role,
+        isHost: client.role === 'host'
     }, clientId);
     
     // Логирование активных соединений для отладки
