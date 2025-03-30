@@ -953,14 +953,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Обновить отображение локального статуса "убит"
     function updateLocalKilledStatus() {
         if (localVideo) {
-            // Добавляем маркер "ВБИТО" в левый верхний угол для локального видео,
-            // но оставляем видео видимым для самого пользователя
+            // Для локального видео всегда добавляем класс local-video
+            localVideo.classList.add('local-video');
+            
+            // Добавляем только маркер "ВБИТО" в левый верхний угол для локального видео,
+            // и НЕ добавляем класс killed, чтобы не применять стили черного фона
             let killMark = localVideo.querySelector('.kill-mark');
             
             if (isKilled) {
-                localVideo.classList.add('killed');
-                localVideo.classList.add('local-video'); // Специальный класс для локального видео
-                
                 // Добавляем маркер, если его еще нет
                 if (!killMark) {
                     killMark = document.createElement('div');
@@ -969,8 +969,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     localVideo.appendChild(killMark);
                 }
             } else {
-                localVideo.classList.remove('killed');
-                
                 // Удаляем маркер, если он есть
                 if (killMark) {
                     killMark.remove();

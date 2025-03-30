@@ -78,8 +78,8 @@ body {
     border-radius: 8px;
 }
 
-/* Killed (вбито) participant styling */
-.video-item.killed::before {
+/* Killed (вбито) participant styling - для удаленных участников */
+.video-item.killed:not(.local-video)::before {
     content: "ВБИТО";
     display: flex;
     position: absolute;
@@ -95,7 +95,7 @@ body {
     border: 2px solid #ff0000;
 }
 
-/* Styling for killed participant's video for others */
+/* Полностью скрываем видео для удаленных участников со статусом killed */
 .video-item.killed:not(.local-video) video {
     opacity: 0;
 }
