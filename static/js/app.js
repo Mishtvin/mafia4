@@ -101,146 +101,188 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSettingsPeerId = null;
     
     // Инициализировать настройки локального видео при открытии модального окна
-    localVideoSettingsBtn.addEventListener('click', () => {
-        // Определить текущее качество видео
-        const videoTrack = localStream && localStream.getVideoTracks()[0];
-        if (videoTrack) {
-            const settings = videoTrack.getSettings();
-            
-            // Определить, какой пресет выбрать
-            let preset = 'medium';
-            if (settings.width) {
-                if (settings.width <= 320) preset = 'low';
-                else if (settings.width <= 640) preset = 'medium';
-                else if (settings.width <= 1280) preset = 'high';
-                else preset = 'hd';
+    if (localVideoSettingsBtn) {
+        localVideoSettingsBtn.addEventListener('click', () => {
+            // Определить текущее качество видео
+            const videoTrack = localStream && localStream.getVideoTracks()[0];
+            if (videoTrack) {
+                const settings = videoTrack.getSettings();
+                
+                // Определить, какой пресет выбрать
+                let preset = 'medium';
+                if (settings.width) {
+                    if (settings.width <= 320) preset = 'low';
+                    else if (settings.width <= 640) preset = 'medium';
+                    else if (settings.width <= 1280) preset = 'high';
+                    else preset = 'hd';
+                }
+                
+                if (localVideoQualitySelect) {
+                    // Установить значения в форме
+                    localVideoQualitySelect.value = preset;
+                }
+                
+                if (localCustomVideoSettings) {
+                    localCustomVideoSettings.style.display = 'none';
+                }
+                
+                if (localVideoWidthInput && localVideoHeightInput) {
+                    // Установить видимые размеры
+                    localVideoWidthInput.value = settings.width || videoQualityPresets[preset].width;
+                    localVideoHeightInput.value = settings.height || videoQualityPresets[preset].height;
+                }
+                
+                // Установить битрейт
+                const bitrate = window.customBitrate || videoQualityPresets[preset].bitrate;
+                
+                if (localVideoBitrateInput) {
+                    localVideoBitrateInput.value = bitrate;
+                }
+                
+                if (localVideoBitrateSlider) {
+                    localVideoBitrateSlider.value = bitrate;
+                }
+                
+                if (localBitrateValue) {
+                    localBitrateValue.textContent = `${bitrate} kbps`;
+                }
             }
-            
-            // Установить значения в форме
-            localVideoQualitySelect.value = preset;
-            localCustomVideoSettings.style.display = 'none';
-            
-            // Установить видимые размеры
-            localVideoWidthInput.value = settings.width || videoQualityPresets[preset].width;
-            localVideoHeightInput.value = settings.height || videoQualityPresets[preset].height;
-            
-            // Установить битрейт
-            const bitrate = window.customBitrate || videoQualityPresets[preset].bitrate;
-            localVideoBitrateInput.value = bitrate;
-            localVideoBitrateSlider.value = bitrate;
-            localBitrateValue.textContent = `${bitrate} kbps`;
-        }
-    });
+        });
+    }
 
     // Показать/скрыть пользовательские настройки видео при входе
-    videoQualitySelect.addEventListener('change', () => {
-        const selectedQuality = videoQualitySelect.value;
-        customVideoSettings.style.display = selectedQuality === 'custom' ? 'block' : 'none';
-        
-        if (selectedQuality !== 'custom') {
-            // Установить значения из пресета
-            const preset = videoQualityPresets[selectedQuality];
-            if (preset) {
-                videoWidthInput.value = preset.width;
-                videoHeightInput.value = preset.height;
-                videoBitrateInput.value = preset.bitrate;
+    if (videoQualitySelect) {
+        videoQualitySelect.addEventListener('change', () => {
+            const selectedQuality = videoQualitySelect.value;
+            if (customVideoSettings) {
+                customVideoSettings.style.display = selectedQuality === 'custom' ? 'block' : 'none';
             }
-        }
-    });
+            
+            if (selectedQuality !== 'custom') {
+                // Установить значения из пресета
+                const preset = videoQualityPresets[selectedQuality];
+                if (preset) {
+                    if (videoWidthInput) videoWidthInput.value = preset.width;
+                    if (videoHeightInput) videoHeightInput.value = preset.height;
+                    if (videoBitrateInput) videoBitrateInput.value = preset.bitrate;
+                }
+            }
+        });
+    }
     
     // Показать/скрыть пользовательские настройки видео для локального видео
-    localVideoQualitySelect.addEventListener('change', () => {
-        const selectedQuality = localVideoQualitySelect.value;
-        localCustomVideoSettings.style.display = selectedQuality === 'custom' ? 'block' : 'none';
-        
-        if (selectedQuality !== 'custom') {
-            // Установить значения из пресета
-            const preset = videoQualityPresets[selectedQuality];
-            if (preset) {
-                localVideoWidthInput.value = preset.width;
-                localVideoHeightInput.value = preset.height;
-                localVideoBitrateInput.value = preset.bitrate;
-                localVideoBitrateSlider.value = preset.bitrate;
-                localBitrateValue.textContent = `${preset.bitrate} kbps`;
+    if (localVideoQualitySelect) {
+        localVideoQualitySelect.addEventListener('change', () => {
+            const selectedQuality = localVideoQualitySelect.value;
+            if (localCustomVideoSettings) {
+                localCustomVideoSettings.style.display = selectedQuality === 'custom' ? 'block' : 'none';
             }
-        }
-    });
+            
+            if (selectedQuality !== 'custom') {
+                // Установить значения из пресета
+                const preset = videoQualityPresets[selectedQuality];
+                if (preset) {
+                    if (localVideoWidthInput) localVideoWidthInput.value = preset.width;
+                    if (localVideoHeightInput) localVideoHeightInput.value = preset.height;
+                    if (localVideoBitrateInput) localVideoBitrateInput.value = preset.bitrate;
+                    if (localVideoBitrateSlider) localVideoBitrateSlider.value = preset.bitrate;
+                    if (localBitrateValue) localBitrateValue.textContent = `${preset.bitrate} kbps`;
+                }
+            }
+        });
+    }
     
     // Синхронизировать слайдер и поле ввода битрейта для локального видео
-    localVideoBitrateSlider.addEventListener('input', () => {
-        const value = localVideoBitrateSlider.value;
-        localVideoBitrateInput.value = value;
-        localBitrateValue.textContent = `${value} kbps`;
-    });
+    if (localVideoBitrateSlider) {
+        localVideoBitrateSlider.addEventListener('input', () => {
+            const value = localVideoBitrateSlider.value;
+            if (localVideoBitrateInput) localVideoBitrateInput.value = value;
+            if (localBitrateValue) localBitrateValue.textContent = `${value} kbps`;
+        });
+    }
     
-    localVideoBitrateInput.addEventListener('input', () => {
-        const value = localVideoBitrateInput.value;
-        if (value >= 100 && value <= 3000) {
-            localVideoBitrateSlider.value = value;
-            localBitrateValue.textContent = `${value} kbps`;
-        }
-    });
+    if (localVideoBitrateInput) {
+        localVideoBitrateInput.addEventListener('input', () => {
+            const value = localVideoBitrateInput.value;
+            if (value >= 100 && value <= 3000) {
+                if (localVideoBitrateSlider) localVideoBitrateSlider.value = value;
+                if (localBitrateValue) localBitrateValue.textContent = `${value} kbps`;
+            }
+        });
+    }
     
     // Применить настройки локального видео
-    applyLocalVideoSettingsBtn.addEventListener('click', async () => {
-        // Получить настройки из формы
-        const selectedQuality = localVideoQualitySelect.value;
-        let videoConstraints = {};
-        let bitrate = 0;
-        
-        if (selectedQuality === 'custom') {
-            const width = parseInt(localVideoWidthInput.value, 10);
-            const height = parseInt(localVideoHeightInput.value, 10);
-            bitrate = parseInt(localVideoBitrateInput.value, 10);
+    if (applyLocalVideoSettingsBtn) {
+        applyLocalVideoSettingsBtn.addEventListener('click', async () => {
+            // Получить настройки из формы
+            if (!localVideoQualitySelect) return;
             
-            videoConstraints = {
-                width: { ideal: width },
-                height: { ideal: height },
-                facingMode: 'user'
-            };
-        } else {
-            const preset = videoQualityPresets[selectedQuality];
-            videoConstraints = {
-                width: { ideal: preset.width },
-                height: { ideal: preset.height },
-                facingMode: 'user'
-            };
-            bitrate = preset.bitrate;
-        }
-        
-        // Сохраняем битрейт для будущего использования
-        window.customBitrate = bitrate;
-        
-        try {
-            // Остановить текущий стрим
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
+            const selectedQuality = localVideoQualitySelect.value;
+            let videoConstraints = {};
+            let bitrate = 0;
+            
+            if (selectedQuality === 'custom') {
+                if (!localVideoWidthInput || !localVideoHeightInput || !localVideoBitrateInput) return;
+                
+                const width = parseInt(localVideoWidthInput.value, 10);
+                const height = parseInt(localVideoHeightInput.value, 10);
+                bitrate = parseInt(localVideoBitrateInput.value, 10);
+                
+                videoConstraints = {
+                    width: { ideal: width },
+                    height: { ideal: height },
+                    facingMode: 'user'
+                };
+            } else {
+                const preset = videoQualityPresets[selectedQuality];
+                videoConstraints = {
+                    width: { ideal: preset.width },
+                    height: { ideal: preset.height },
+                    facingMode: 'user'
+                };
+                bitrate = preset.bitrate;
             }
             
-            // Получить новый стрим с новыми настройками
-            const newStream = await navigator.mediaDevices.getUserMedia({
-                video: videoConstraints,
-                audio: false
-            });
+            // Сохраняем битрейт для будущего использования
+            window.customBitrate = bitrate;
             
-            // Заменить локальный стрим
-            localStream = newStream;
-            
-            // Обновить видео элемент
-            const videoElement = localVideo.querySelector('video');
-            videoElement.srcObject = newStream;
-            
-            // Обновить видео треки во всех peer connections
-            updateVideoTracksInPeerConnections(bitrate);
-            
-            // Закрыть модальное окно
-            localVideoSettingsModal.hide();
-            
-        } catch (error) {
-            console.error('Error applying local video settings:', error);
-            showError(`Failed to apply video settings: ${error.message}`);
-        }
-    });
+            try {
+                // Остановить текущий стрим
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                }
+                
+                // Получить новый стрим с новыми настройками
+                const newStream = await navigator.mediaDevices.getUserMedia({
+                    video: videoConstraints,
+                    audio: false
+                });
+                
+                // Заменить локальный стрим
+                localStream = newStream;
+                
+                if (localVideo) {
+                    // Обновить видео элемент
+                    const videoElement = localVideo.querySelector('video');
+                    if (videoElement) {
+                        videoElement.srcObject = newStream;
+                    }
+                }
+                
+                // Обновить видео треки во всех peer connections
+                updateVideoTracksInPeerConnections(bitrate);
+                
+                // Закрыть модальное окно
+                if (localVideoSettingsModal) {
+                    localVideoSettingsModal.hide();
+                }
+                
+            } catch (error) {
+                console.error('Error applying local video settings:', error);
+                showError(`Failed to apply video settings: ${error.message}`);
+            }
+        });
+    }
     
     // Функция для обновления видео треков во всех peer connections
     function updateVideoTracksInPeerConnections(bitrate) {
@@ -290,83 +332,104 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Показать/скрыть пользовательские настройки видео для пиров
-    peerVideoQualitySelect.addEventListener('change', () => {
-        const selectedQuality = peerVideoQualitySelect.value;
-        peerCustomVideoSettings.style.display = selectedQuality === 'custom' ? 'block' : 'none';
-        
-        if (selectedQuality !== 'custom') {
-            // Установить значения из пресета
-            const preset = videoQualityPresets[selectedQuality];
-            if (preset) {
-                peerVideoWidthInput.value = preset.width;
-                peerVideoHeightInput.value = preset.height;
-                peerVideoBitrateInput.value = preset.bitrate;
-                peerVideoBitrateSlider.value = preset.bitrate;
-                peerBitrateValue.textContent = `${preset.bitrate} kbps`;
+    if (peerVideoQualitySelect) {
+        peerVideoQualitySelect.addEventListener('change', () => {
+            const selectedQuality = peerVideoQualitySelect.value;
+            if (peerCustomVideoSettings) {
+                peerCustomVideoSettings.style.display = selectedQuality === 'custom' ? 'block' : 'none';
             }
-        }
-    });
+            
+            if (selectedQuality !== 'custom') {
+                // Установить значения из пресета
+                const preset = videoQualityPresets[selectedQuality];
+                if (preset) {
+                    if (peerVideoWidthInput) peerVideoWidthInput.value = preset.width;
+                    if (peerVideoHeightInput) peerVideoHeightInput.value = preset.height;
+                    if (peerVideoBitrateInput) peerVideoBitrateInput.value = preset.bitrate;
+                    if (peerVideoBitrateSlider) peerVideoBitrateSlider.value = preset.bitrate;
+                    if (peerBitrateValue) peerBitrateValue.textContent = `${preset.bitrate} kbps`;
+                }
+            }
+        });
+    }
     
     // Синхронизировать слайдер и поле ввода битрейта для пиров
-    peerVideoBitrateSlider.addEventListener('input', () => {
-        const value = peerVideoBitrateSlider.value;
-        peerVideoBitrateInput.value = value;
-        peerBitrateValue.textContent = `${value} kbps`;
-    });
+    if (peerVideoBitrateSlider) {
+        peerVideoBitrateSlider.addEventListener('input', () => {
+            const value = peerVideoBitrateSlider.value;
+            if (peerVideoBitrateInput) peerVideoBitrateInput.value = value;
+            if (peerBitrateValue) peerBitrateValue.textContent = `${value} kbps`;
+        });
+    }
     
-    peerVideoBitrateInput.addEventListener('input', () => {
-        const value = peerVideoBitrateInput.value;
-        if (value >= 100 && value <= 3000) {
-            peerVideoBitrateSlider.value = value;
-            peerBitrateValue.textContent = `${value} kbps`;
-        }
-    });
+    if (peerVideoBitrateInput) {
+        peerVideoBitrateInput.addEventListener('input', () => {
+            const value = peerVideoBitrateInput.value;
+            if (value >= 100 && value <= 3000) {
+                if (peerVideoBitrateSlider) peerVideoBitrateSlider.value = value;
+                if (peerBitrateValue) peerBitrateValue.textContent = `${value} kbps`;
+            }
+        });
+    }
 
     // Join form submission handler
-    joinForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        username = usernameInput.value.trim();
-        roomname = roomnameInput.value.trim() || 'default';
-        videoEnabled = videoEnabledCheckbox.checked;
-        
-        // Получить настройки качества видео
-        const selectedQuality = videoQualitySelect.value;
-        let videoConstraints = {};
-        
-        if (videoEnabled) {
-            if (selectedQuality === 'custom') {
-                const width = parseInt(videoWidthInput.value, 10);
-                const height = parseInt(videoHeightInput.value, 10);
-                const bitrate = parseInt(videoBitrateInput.value, 10);
-                
-                videoConstraints = {
-                    width: { ideal: width },
-                    height: { ideal: height },
-                    facingMode: 'user'
-                };
-                
-                // Сохраняем битрейт для будущего использования
-                window.customBitrate = bitrate;
-            } else {
-                const preset = videoQualityPresets[selectedQuality];
-                videoConstraints = {
-                    width: { ideal: preset.width },
-                    height: { ideal: preset.height },
-                    facingMode: 'user'
-                };
-                
-                // Сохраняем битрейт для будущего использования
-                window.customBitrate = preset.bitrate;
+    if (joinForm) {
+        joinForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!usernameInput || !roomnameInput || !videoEnabledCheckbox || !videoQualitySelect) {
+                showError('Some form elements are missing. Please refresh the page and try again.');
+                return;
             }
-        }
-        
-        try {
-            await setupLocalStream(videoConstraints);
-            connectToGalene();
-        } catch (error) {
-            showError(`Failed to access camera: ${error.message}. Please make sure your camera is connected and you've granted permission to use it.`);
-        }
-    });
+            
+            username = usernameInput.value.trim();
+            roomname = roomnameInput.value.trim() || 'default';
+            videoEnabled = videoEnabledCheckbox.checked;
+            
+            // Получить настройки качества видео
+            const selectedQuality = videoQualitySelect.value;
+            let videoConstraints = {};
+            
+            if (videoEnabled) {
+                if (selectedQuality === 'custom') {
+                    if (!videoWidthInput || !videoHeightInput || !videoBitrateInput) {
+                        showError('Custom video settings elements are missing. Please refresh the page and try again.');
+                        return;
+                    }
+                    
+                    const width = parseInt(videoWidthInput.value, 10);
+                    const height = parseInt(videoHeightInput.value, 10);
+                    const bitrate = parseInt(videoBitrateInput.value, 10);
+                    
+                    videoConstraints = {
+                        width: { ideal: width },
+                        height: { ideal: height },
+                        facingMode: 'user'
+                    };
+                    
+                    // Сохраняем битрейт для будущего использования
+                    window.customBitrate = bitrate;
+                } else {
+                    const preset = videoQualityPresets[selectedQuality];
+                    videoConstraints = {
+                        width: { ideal: preset.width },
+                        height: { ideal: preset.height },
+                        facingMode: 'user'
+                    };
+                    
+                    // Сохраняем битрейт для будущего использования
+                    window.customBitrate = preset.bitrate;
+                }
+            }
+            
+            try {
+                await setupLocalStream(videoConstraints);
+                connectToGalene();
+            } catch (error) {
+                showError(`Failed to access camera: ${error.message}. Please make sure your camera is connected and you've granted permission to use it.`);
+            }
+        });
+    }
 
     // Set up local video stream
     async function setupLocalStream(videoConstraints = null) {
