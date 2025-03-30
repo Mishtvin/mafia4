@@ -2,6 +2,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Feather icons
     feather.replace();
     
+    // Инициализируем определение наведения мыши для сайдбара
+    setupSidebarHoverDetection();
+    
     // DOM elements
     const joinAsPlayerBtn = document.getElementById('join-as-player-btn');
     const joinAsHostBtn = document.getElementById('join-as-host-btn');
@@ -1877,7 +1880,34 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function hideControlSidebar() {
         controlSidebar.classList.remove('show');
-        sidebarToggleBtn.style.display = 'block';
+        sidebarToggleBtn.style.display = 'none'; // Скрываем кнопку после закрытия сайдбара
+    }
+    
+    // Функция для показа кнопки сайдбара при наведении на левую часть экрана
+    function setupSidebarHoverDetection() {
+        // Создаем невидимую зону для определения наведения в левой трети экрана
+        const hoverZone = document.createElement('div');
+        hoverZone.style.position = 'fixed';
+        hoverZone.style.top = '0';
+        hoverZone.style.left = '0';
+        hoverZone.style.width = '33%'; // Левая треть экрана
+        hoverZone.style.height = '100%';
+        hoverZone.style.zIndex = '1030'; // Ниже чем у кнопки, но выше большинства элементов
+        hoverZone.style.pointerEvents = 'none'; // Не блокирует клики
+        document.body.appendChild(hoverZone);
+        
+        // Показываем кнопку при наведении на левую треть экрана
+        document.addEventListener('mousemove', (e) => {
+            const screenWidth = window.innerWidth;
+            const mouseX = e.clientX;
+            
+            // Если мышь в левой трети экрана и сайдбар не открыт
+            if (mouseX < screenWidth / 3 && !controlSidebar.classList.contains('show')) {
+                sidebarToggleBtn.style.display = 'flex';
+            } else if (mouseX >= screenWidth / 3 && !controlSidebar.classList.contains('show')) {
+                sidebarToggleBtn.style.display = 'none';
+            }
+        });
     }
     
     function initSidebarSettings() {
