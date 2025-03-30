@@ -1588,54 +1588,57 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Обработчики для модального окна настроек видео
-    document.querySelector('.video-settings-action').addEventListener('click', (e) => {
-        e.preventDefault();
-        
-        // Получить peerId из контекстного меню
-        const peerId = videoContextMenu.dataset.peerId;
-        if (!peerId) return;
-        
-        // Скрыть контекстное меню
-        videoContextMenu.style.display = 'none';
-        
-        // Сохранить текущий peerId для настроек
-        currentSettingsPeerId = peerId;
-        
-        // Получить информацию о пире
-        const peer = peers.get(peerId);
-        const localName = localPeerNames.get(peerId);
-        let displayName = 'Participant';
-        
-        if (localName) {
-            displayName = localName;
-        } else if (peer && peer.username) {
-            displayName = peer.username;
-        }
-        
-        // Установить имя в заголовке модального окна
-        videoSettingsPeerName.textContent = displayName;
-        
-        // Получить текущие настройки видео пира или установить значения по умолчанию
-        const settings = peerVideoSettings.get(peerId) || videoQualityPresets.medium;
-        
-        // Установить значения в модальном окне
-        if (settings.preset && settings.preset !== 'custom') {
-            peerVideoQualitySelect.value = settings.preset;
-            peerCustomVideoSettings.style.display = 'none';
-        } else {
-            peerVideoQualitySelect.value = 'custom';
-            peerCustomVideoSettings.style.display = 'block';
-        }
-        
-        peerVideoWidthInput.value = settings.width || 640;
-        peerVideoHeightInput.value = settings.height || 480;
-        peerVideoBitrateInput.value = settings.bitrate || 1000;
-        peerVideoBitrateSlider.value = settings.bitrate || 1000;
-        peerBitrateValue.textContent = `${settings.bitrate || 1000} kbps`;
-        
-        // Открыть модальное окно
-        videoSettingsModal.show();
-    });
+    const videoSettingsAction = document.querySelector('.video-settings-action');
+    if (videoSettingsAction) {
+        videoSettingsAction.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Получить peerId из контекстного меню
+            const peerId = videoContextMenu.dataset.peerId;
+            if (!peerId) return;
+            
+            // Скрыть контекстное меню
+            videoContextMenu.style.display = 'none';
+            
+            // Сохранить текущий peerId для настроек
+            currentSettingsPeerId = peerId;
+            
+            // Получить информацию о пире
+            const peer = peers.get(peerId);
+            const localName = localPeerNames.get(peerId);
+            let displayName = 'Participant';
+            
+            if (localName) {
+                displayName = localName;
+            } else if (peer && peer.username) {
+                displayName = peer.username;
+            }
+            
+            // Установить имя в заголовке модального окна
+            videoSettingsPeerName.textContent = displayName;
+            
+            // Получить текущие настройки видео пира или установить значения по умолчанию
+            const settings = peerVideoSettings.get(peerId) || videoQualityPresets.medium;
+            
+            // Установить значения в модальном окне
+            if (settings.preset && settings.preset !== 'custom') {
+                peerVideoQualitySelect.value = settings.preset;
+                peerCustomVideoSettings.style.display = 'none';
+            } else {
+                peerVideoQualitySelect.value = 'custom';
+                peerCustomVideoSettings.style.display = 'block';
+            }
+            
+            peerVideoWidthInput.value = settings.width || 640;
+            peerVideoHeightInput.value = settings.height || 480;
+            peerVideoBitrateInput.value = settings.bitrate || 1000;
+            peerVideoBitrateSlider.value = settings.bitrate || 1000;
+            peerBitrateValue.textContent = `${settings.bitrate || 1000} kbps`;
+            
+            // Открыть модальное окно
+            videoSettingsModal.show();
+        });
+    }
     
     // Обработчик кнопки применения настроек видео
     applyVideoSettingsBtn.addEventListener('click', () => {
@@ -1724,25 +1727,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Обработчик клика на переименование в контекстном меню
-    document.querySelector('.rename-peer-action').addEventListener('click', (e) => {
-        e.preventDefault();
-        
-        // Получить peerId из контекстного меню
-        const peerId = videoContextMenu.dataset.peerId;
-        if (!peerId) return;
-        
-        // Скрыть контекстное меню
-        videoContextMenu.style.display = 'none';
-        
-        // Выбрать пира в выпадающем списке
-        peerSelect.value = peerId;
-        
-        // Открыть модальное окно
-        renameModal.show();
-        
-        // Фокус на поле ввода нового имени
-        peerNewNameInput.focus();
-    });
+    const renamePeerAction = document.querySelector('.rename-peer-action');
+    if (renamePeerAction) {
+        renamePeerAction.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Получить peerId из контекстного меню
+            const peerId = videoContextMenu.dataset.peerId;
+            if (!peerId) return;
+            
+            // Скрыть контекстное меню
+            videoContextMenu.style.display = 'none';
+            
+            // Выбрать пира в выпадающем списке
+            peerSelect.value = peerId;
+            
+            // Открыть модальное окно
+            renameModal.show();
+            
+            // Фокус на поле ввода нового имени
+            peerNewNameInput.focus();
+        });
+    }
     
     // Скрыть контекстное меню при клике вне его
     document.addEventListener('click', () => {
