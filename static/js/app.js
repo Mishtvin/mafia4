@@ -974,15 +974,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 
             case 'user_killed':
                 // Обработка изменения статуса "отключен/убит"
-                if (message.id !== serverId) {
-                    // Обновить статус в списке пиров
-                    const peer = peers.get(message.id);
-                    if (peer) {
-                        peer.killed = message.killed;
-                        
-                        // Обновить отображение в видео элементе
-                        updatePeerKilledStatus(message.id);
+                // Обрабатываем сообщения как для других пиров, так и для нас самих
+                // (чтобы и обычные пользователи видели изменения кнопок)
+                // Обновить статус в списке пиров
+                const peer = peers.get(message.id);
+                if (peer) {
+                    peer.killed = message.killed;
+                    
+                    // Если это сообщение касается нашего собственного статуса,
+                    // обновляем локальное состояние и интерфейс
+                    if (message.id === clientId) {
+                        isKilled = message.killed;
+                        updateLocalKilledStatus();
                     }
+                    
+                    // Обновить отображение в видео элементе
+                    updatePeerKilledStatus(message.id);
                 }
                 break;
                 
