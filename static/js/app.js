@@ -683,12 +683,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 userRole = message.role || 'player';
                 console.log(`Joined as ${userRole}`);
                 
-                // Добавить в интерфейс индикатор роли пользователя
-                const roleIndicator = document.createElement('div');
-                roleIndicator.id = 'role-indicator';
-                roleIndicator.className = `role-indicator ${userRole}`;
-                roleIndicator.textContent = userRole === 'host' ? 'Ведущий' : 'Игрок';
-                document.body.appendChild(roleIndicator);
+                // Не добавляем отдельный индикатор роли, отображаем её в имени
                 
                 // Обновить название комнаты в сайдбаре
                 updateRoomInfo(roomname);
@@ -930,15 +925,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (localVideo) {
             const label = localVideo.querySelector('.video-label');
             if (label) {
-                label.textContent = `You (${username})`;
+                // Для роли ведущего добавляем (ведущий) после имени
+                if (userRole === 'host') {
+                    label.textContent = `You (${username}) (ведущий)`;
+                } else {
+                    label.textContent = `You (${username})`;
+                }
             }
             
-            // Обновить класс роли
-            if (userRole === 'host') {
-                localVideo.classList.add('host');
-            } else {
-                localVideo.classList.remove('host');
-            }
+            // Убираем класс host для видео, т.к. теперь показываем роль в подписи имени
+            localVideo.classList.remove('host');
         }
     }
     
@@ -955,12 +951,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const peer = peers.get(peerId);
         
         if (localName) {
-            label.textContent = localName;
+            // Добавляем (ведущий) для пиров с ролью host
+            if (peer && (peer.role === 'host' || peer.isHost)) {
+                label.textContent = `${localName} (ведущий)`;
+            } else {
+                label.textContent = localName;
+            }
         } else if (peer) {
-            label.textContent = peer.username;
+            // Добавляем (ведущий) для пиров с ролью host
+            if (peer.role === 'host' || peer.isHost) {
+                label.textContent = `${peer.username} (ведущий)`;
+            } else {
+                label.textContent = peer.username;
+            }
         } else {
             label.textContent = 'Participant';
         }
+        
+        // Убираем класс host для видео, т.к. теперь показываем роль в подписи имени
+        videoElement.classList.remove('host');
     }
     
     // Обновить выпадающий список для переименования
@@ -1372,10 +1381,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 videoItem.classList.add('killed');
             }
             
-            // Если пир имеет роль ведущего, добавить соответствующий класс
-            if (peer && (peer.role === 'host' || peer.isHost)) {
-                videoItem.classList.add('host');
-            }
+            // Не добавляем класс host, так как роль отображается в имени
             
             videoItem.innerHTML = `
                 <video autoplay playsinline></video>
