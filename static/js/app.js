@@ -24,6 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const peerNewNameInput = document.getElementById('peer-new-name');
     const renamePeerSection = document.getElementById('rename-peer-section');
     const reviveAllBtn = document.getElementById('revive-all-btn');
+    const balaganBtn = document.getElementById('balagan-btn');
+    const timerContainer = document.getElementById('timer-container');
+    const timerDisplay = document.getElementById('timer-display');
     const renameModal = new bootstrap.Modal(document.getElementById('rename-modal'));
     const errorModal = new bootstrap.Modal(document.getElementById('error-modal'));
     const errorMessage = document.getElementById('error-message');
@@ -2088,6 +2091,52 @@ document.addEventListener('DOMContentLoaded', () => {
             sendMessage({
                 type: 'revive_all'
             });
+        });
+    }
+    
+    // Функция для запуска и отображения таймера
+    function startTimer(durationInSeconds) {
+        // Преобразуем секунды в миллисекунды
+        const startTime = Date.now();
+        const endTime = startTime + (durationInSeconds * 1000);
+        
+        // Показываем контейнер таймера
+        timerContainer.style.display = 'flex';
+        
+        // Обновляем таймер каждую секунду
+        const timerInterval = setInterval(() => {
+            // Вычисляем оставшееся время
+            const currentTime = Date.now();
+            const remainingTime = endTime - currentTime;
+            
+            if (remainingTime <= 0) {
+                // Таймер закончился
+                clearInterval(timerInterval);
+                timerContainer.style.display = 'none';
+                return;
+            }
+            
+            // Преобразуем миллисекунды в минуты и секунды
+            const minutes = Math.floor(remainingTime / 60000);
+            const seconds = Math.floor((remainingTime % 60000) / 1000);
+            
+            // Отображаем время в формате MM:SS
+            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }, 1000);
+    }
+    
+    // Обработчик клика на кнопку "Балаган"
+    if (balaganBtn) {
+        balaganBtn.addEventListener('click', () => {
+            if (userRole !== 'host') {
+                showError('Тільки ведучий може використовувати кнопку "Балаган"');
+                return;
+            }
+            
+            console.log('Host is starting a 1-minute timer (Балаган)');
+            
+            // Запускаем таймер на 1 минуту (60 секунд)
+            startTimer(60);
         });
     }
     
