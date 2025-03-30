@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const errorMessage = document.getElementById('error-message');
     const videoContextMenu = document.getElementById('video-context-menu');
     
-    // Элементы модального окна для настройки видео
+    // Элементы модального окна для настройки видео удаленных пиров
     const videoSettingsModal = new bootstrap.Modal(document.getElementById('video-settings-modal'));
     const videoSettingsPeerName = document.getElementById('video-settings-peer-name');
     const peerVideoQualitySelect = document.getElementById('peer-video-quality');
@@ -42,6 +42,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const peerVideoBitrateSlider = document.getElementById('peer-video-bitrate-slider');
     const peerBitrateValue = document.getElementById('peer-bitrate-value');
     const applyVideoSettingsBtn = document.getElementById('apply-video-settings-btn');
+    
+    // Элементы модального окна для настройки локального видео
+    const localVideoSettingsModal = new bootstrap.Modal(document.getElementById('local-video-settings-modal'));
+    const localVideoQualitySelect = document.getElementById('local-video-quality');
+    const localCustomVideoSettings = document.getElementById('local-custom-video-settings');
+    const localVideoWidthInput = document.getElementById('local-video-width');
+    const localVideoHeightInput = document.getElementById('local-video-height');
+    const localVideoBitrateInput = document.getElementById('local-video-bitrate');
+    const localVideoBitrateSlider = document.getElementById('local-video-bitrate-slider');
+    const localBitrateValue = document.getElementById('local-bitrate-value');
+    const applyLocalVideoSettingsBtn = document.getElementById('apply-local-video-settings-btn');
+    const localVideoSettingsBtn = document.getElementById('local-video-settings-btn');
 
     // WebRTC and Galène variables
     let socket = null;
@@ -72,8 +84,40 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // ID текущего пира для изменения настроек видео
     let currentSettingsPeerId = null;
+    
+    // Инициализировать настройки локального видео при открытии модального окна
+    localVideoSettingsBtn.addEventListener('click', () => {
+        // Определить текущее качество видео
+        const videoTrack = localStream && localStream.getVideoTracks()[0];
+        if (videoTrack) {
+            const settings = videoTrack.getSettings();
+            
+            // Определить, какой пресет выбрать
+            let preset = 'medium';
+            if (settings.width) {
+                if (settings.width <= 320) preset = 'low';
+                else if (settings.width <= 640) preset = 'medium';
+                else if (settings.width <= 1280) preset = 'high';
+                else preset = 'hd';
+            }
+            
+            // Установить значения в форме
+            localVideoQualitySelect.value = preset;
+            localCustomVideoSettings.style.display = 'none';
+            
+            // Установить видимые размеры
+            localVideoWidthInput.value = settings.width || videoQualityPresets[preset].width;
+            localVideoHeightInput.value = settings.height || videoQualityPresets[preset].height;
+            
+            // Установить битрейт
+            const bitrate = window.customBitrate || videoQualityPresets[preset].bitrate;
+            localVideoBitrateInput.value = bitrate;
+            localVideoBitrateSlider.value = bitrate;
+            localBitrateValue.textContent = `${bitrate} kbps`;
+        }
+    });
 
-    // Показать/скрыть пользовательские настройки видео
+    // Показать/скрыть пользовательские настройки видео при входе
     videoQualitySelect.addEventListener('change', () => {
         const selectedQuality = videoQualitySelect.value;
         customVideoSettings.style.display = selectedQuality === 'custom' ? 'block' : 'none';
@@ -88,6 +132,147 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+    
+    // Показать/скрыть пользовательские настройки видео для локального видео
+    localVideoQualitySelect.addEventListener('change', () => {
+        const selectedQuality = localVideoQualitySelect.value;
+        localCustomVideoSettings.style.display = selectedQuality === 'custom' ? 'block' : 'none';
+        
+        if (selectedQuality !== 'custom') {
+            // Установить значения из пресета
+            const preset = videoQualityPresets[selectedQuality];
+            if (preset) {
+                localVideoWidthInput.value = preset.width;
+                localVideoHeightInput.value = preset.height;
+                localVideoBitrateInput.value = preset.bitrate;
+                localVideoBitrateSlider.value = preset.bitrate;
+                localBitrateValue.textContent = `${preset.bitrate} kbps`;
+            }
+        }
+    });
+    
+    // Синхронизировать слайдер и поле ввода битрейта для локального видео
+    localVideoBitrateSlider.addEventListener('input', () => {
+        const value = localVideoBitrateSlider.value;
+        localVideoBitrateInput.value = value;
+        localBitrateValue.textContent = `${value} kbps`;
+    });
+    
+    localVideoBitrateInput.addEventListener('input', () => {
+        const value = localVideoBitrateInput.value;
+        if (value >= 100 && value <= 3000) {
+            localVideoBitrateSlider.value = value;
+            localBitrateValue.textContent = `${value} kbps`;
+        }
+    });
+    
+    // Применить настройки локального видео
+    applyLocalVideoSettingsBtn.addEventListener('click', async () => {
+        // Получить настройки из формы
+        const selectedQuality = localVideoQualitySelect.value;
+        let videoConstraints = {};
+        let bitrate = 0;
+        
+        if (selectedQuality === 'custom') {
+            const width = parseInt(localVideoWidthInput.value, 10);
+            const height = parseInt(localVideoHeightInput.value, 10);
+            bitrate = parseInt(localVideoBitrateInput.value, 10);
+            
+            videoConstraints = {
+                width: { ideal: width },
+                height: { ideal: height },
+                facingMode: 'user'
+            };
+        } else {
+            const preset = videoQualityPresets[selectedQuality];
+            videoConstraints = {
+                width: { ideal: preset.width },
+                height: { ideal: preset.height },
+                facingMode: 'user'
+            };
+            bitrate = preset.bitrate;
+        }
+        
+        // Сохраняем битрейт для будущего использования
+        window.customBitrate = bitrate;
+        
+        try {
+            // Остановить текущий стрим
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+            
+            // Получить новый стрим с новыми настройками
+            const newStream = await navigator.mediaDevices.getUserMedia({
+                video: videoConstraints,
+                audio: false
+            });
+            
+            // Заменить локальный стрим
+            localStream = newStream;
+            
+            // Обновить видео элемент
+            const videoElement = localVideo.querySelector('video');
+            videoElement.srcObject = newStream;
+            
+            // Обновить видео треки во всех peer connections
+            updateVideoTracksInPeerConnections(bitrate);
+            
+            // Закрыть модальное окно
+            localVideoSettingsModal.hide();
+            
+        } catch (error) {
+            console.error('Error applying local video settings:', error);
+            showError(`Failed to apply video settings: ${error.message}`);
+        }
+    });
+    
+    // Функция для обновления видео треков во всех peer connections
+    function updateVideoTracksInPeerConnections(bitrate) {
+        if (!localStream) return;
+        
+        const videoTrack = localStream.getVideoTracks()[0];
+        if (!videoTrack) {
+            console.warn('No video track found in local stream');
+            return;
+        }
+        
+        // Обновить видео треки во всех peer connections
+        Object.values(peerConnections).forEach(pc => {
+            const senders = pc.getSenders();
+            const videoSender = senders.find(sender => 
+                sender.track && sender.track.kind === 'video'
+            );
+            
+            if (videoSender) {
+                // Заменить трек
+                videoSender.replaceTrack(videoTrack)
+                    .then(() => {
+                        console.log('Successfully replaced video track');
+                        
+                        // Установить битрейт
+                        try {
+                            const params = videoSender.getParameters();
+                            if (!params.encodings) {
+                                params.encodings = [{}];
+                            }
+                            
+                            // Установить максимальный битрейт для видео
+                            params.encodings[0].maxBitrate = bitrate * 1000; // Convert kbps to bps
+                            
+                            videoSender.setParameters(params)
+                                .then(() => console.log(`Set bitrate for outgoing video: ${bitrate} kbps`))
+                                .catch(e => console.error('Error setting video parameters:', e));
+                        } catch (error) {
+                            console.warn('Could not set video parameters:', error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error replacing video track:', error);
+                    });
+            }
+        });
+    }
     
     // Показать/скрыть пользовательские настройки видео для пиров
     peerVideoQualitySelect.addEventListener('change', () => {
@@ -107,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // Синхронизировать слайдер и поле ввода битрейта
+    // Синхронизировать слайдер и поле ввода битрейта для пиров
     peerVideoBitrateSlider.addEventListener('input', () => {
         const value = peerVideoBitrateSlider.value;
         peerVideoBitrateInput.value = value;
