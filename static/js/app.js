@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebarToggleVideoBtn = document.getElementById('sidebar-toggle-video');
     const sidebarToggleKilledBtn = document.getElementById('sidebar-toggle-killed');
     const sidebarRenameBtn = document.getElementById('sidebar-rename-btn');
+    const randomizePlayerOrderBtn = document.getElementById('randomize-player-order-btn');
 
     // WebRTC and Galène variables
     let socket = null;
@@ -714,6 +715,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Показать кнопку переключения сайдбара
                 sidebarToggleBtn.style.display = 'block';
+                
+                // Показать раздел управления комнатой если пользователь - ведущий
+                const hostControlsSection = document.getElementById('host-controls-section');
+                if (hostControlsSection) {
+                    hostControlsSection.style.display = userRole === 'host' ? 'block' : 'none';
+                }
                 
                 // Показать имя пользователя в поле изменения имени
                 newUsernameInput.value = username;
@@ -1852,6 +1859,43 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebarLeaveBtn = document.getElementById('sidebar-leave-btn');
     if (sidebarLeaveBtn) {
         sidebarLeaveBtn.addEventListener('click', disconnect);
+    }
+    
+    // Обработчик для кнопки случайного присвоения номеров игрокам
+    if (randomizePlayerOrderBtn) {
+        randomizePlayerOrderBtn.addEventListener('click', () => {
+            // Находим всех игроков (не ведущих)
+            const players = Array.from(peers.entries())
+                .filter(([_, peer]) => peer.role !== 'host' && !peer.isHost)
+                .map(([id, peer]) => ({ id, peer }));
+            
+            // Если нет игроков, ничего не делаем
+            if (players.length === 0) {
+                console.log('No players to randomize order numbers');
+                return;
+            }
+            
+            console.log(`Found ${players.length} players for randomizing order numbers`);
+            
+            // Генерируем последовательные номера от 1 до N
+            const numbers = Array.from({ length: players.length }, (_, i) => i + 1);
+            
+            // Присваиваем случайные номера каждому игроку
+            players.forEach(({ id }) => {
+                // Выбираем случайный номер из оставшихся и удаляем его из массива
+                const randomIndex = Math.floor(Math.random() * numbers.length);
+                const randomNumber = numbers.splice(randomIndex, 1)[0];
+                
+                console.log(`Assigning random order index ${randomNumber} to player ${id}`);
+                
+                // Отправляем сообщение на сервер для изменения порядкового номера
+                sendMessage({
+                    type: 'change_order_index',
+                    id: id,
+                    orderIndex: randomNumber
+                });
+            });
+        });
     }
     
     // Показать/скрыть пользовательские настройки видео для сайдбара
