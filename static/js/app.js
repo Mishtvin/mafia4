@@ -1099,6 +1099,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const killButton = videoElement.querySelector('.remote-kill-button');
             if (killButton) {
                 killButton.innerHTML = peer.killed ? '👼' : '💀';
+                // Добавляем или удаляем класс angel-icon для ангелочка
+                if (peer.killed) {
+                    killButton.classList.add('angel-icon');
+                } else {
+                    killButton.classList.remove('angel-icon');
+                }
             }
         }
     }
@@ -1761,8 +1767,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Добавляем кнопку убито только для игроков (не для ведущих)
             // и только если текущий пользователь - ведущий
             const isKilled = peer && peer.killed;
+            const angelClass = isKilled ? ' angel-icon' : '';
             const killButtonHtml = !isHost && userRole === 'host' ? 
-                `<button class="kill-button remote-kill-button" data-peer-id="${peerId}" title="Вбито">${isKilled ? '👼' : '💀'}</button>` : '';
+                `<button class="kill-button remote-kill-button${angelClass}" data-peer-id="${peerId}" title="Вбито">${isKilled ? '👼' : '💀'}</button>` : '';
                 
             // Для удаленных участников "ВБИТО" добавляется через CSS оформление,
             // не добавляем отдельный элемент с надписью - это только для локального видео
@@ -2339,7 +2346,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target && e.target.classList.contains('remote-kill-button')) {
             e.preventDefault();
             const peerId = e.target.dataset.peerId;
-            if (peerId && userRole === 'host') {
+            
+            // Проверяем, что текущий пользователь — ведущий 
+            // и что нажатая кнопка не показывает ангелочка (не является уже убитым игроком)
+            if (peerId && userRole === 'host' && e.target.textContent !== '👼') {
                 // Получаем пира из списка
                 const peer = peers.get(peerId);
                 if (peer) {
