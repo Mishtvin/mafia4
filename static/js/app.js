@@ -1929,16 +1929,27 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', (e) => {
         // Проверяем, что клик был на метке имени локального видео
         if (e.target.id === 'local-username-label') {
-            // Создаем форму редактирования непосредственно внутри метки
+            const videoItem = e.target.closest('.video-item');
             const originalContent = e.target.innerHTML;
             
-            e.target.innerHTML = `
-                <input type="text" class="edit-username-input" value="${username}" style="width: 80%; max-width: 150px;">
-                <button class="save-username-btn" style="margin-left: 5px;">✓</button>
+            // Скрываем оригинальную метку
+            e.target.style.display = 'none';
+            
+            // Создаем контейнер для редактирования имени
+            const editContainer = document.createElement('div');
+            editContainer.className = 'username-edit-container';
+            
+            // Создаем поле ввода и кнопку OK
+            editContainer.innerHTML = `
+                <input type="text" class="username-edit-input" value="${username}">
+                <button class="username-edit-button">OK</button>
             `;
             
-            const input = e.target.querySelector('.edit-username-input');
-            const saveBtn = e.target.querySelector('.save-username-btn');
+            // Добавляем контейнер к родительскому элементу видео
+            videoItem.appendChild(editContainer);
+            
+            const input = editContainer.querySelector('.username-edit-input');
+            const okBtn = editContainer.querySelector('.username-edit-button');
             
             // Установить фокус в поле ввода
             input.focus();
@@ -1955,20 +1966,26 @@ document.addEventListener('DOMContentLoaded', () => {
                         username: newName
                     });
                 }
-                // Восстановить оригинальное содержимое метки
-                e.target.innerHTML = originalContent;
+                
+                // Удаляем контейнер редактирования
+                if (videoItem.contains(editContainer)) {
+                    videoItem.removeChild(editContainer);
+                }
+                
+                // Показываем оригинальную метку
+                e.target.style.display = '';
             };
             
-            // Обработчик для отмены редактирования (клик вне поля)
+            // Обработчик для отмены редактирования (клик вне контейнера)
             const cancelEdit = (event) => {
-                if (!e.target.contains(event.target) && e.target !== event.target) {
-                    e.target.innerHTML = originalContent;
+                if (!editContainer.contains(event.target) && editContainer !== event.target) {
+                    saveUsername();
                     document.removeEventListener('click', cancelEdit);
                 }
             };
             
-            // Слушатели событий для поля ввода и кнопки сохранения
-            saveBtn.addEventListener('click', (saveEvent) => {
+            // Слушатели событий для поля ввода и кнопки OK
+            okBtn.addEventListener('click', (saveEvent) => {
                 saveEvent.stopPropagation();
                 saveUsername();
                 document.removeEventListener('click', cancelEdit);

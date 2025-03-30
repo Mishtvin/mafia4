@@ -246,6 +246,44 @@ body {
     color: #adb5bd !important;
 }
 
+/* Username editing styles */
+.username-edit-container {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    display: flex;
+    align-items: center;
+    z-index: 100;
+    width: 80%;
+    max-width: 300px;
+}
+
+.username-edit-input {
+    flex: 1;
+    background-color: #121212;
+    border: 1px solid #444;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px 0 0 4px;
+    font-size: 14px;
+    height: 38px;
+}
+
+.username-edit-button {
+    background-color: #7b3dd9;
+    color: white;
+    border: none;
+    height: 38px;
+    padding: 0 15px;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.username-edit-button:hover {
+    background-color: #6a33ba;
+}
+
 /* Modals in dark theme */
 .modal-content {
     background-color: #2d2d2d;
