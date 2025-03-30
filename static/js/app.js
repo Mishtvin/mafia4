@@ -1891,7 +1891,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Отправляем сообщение на сервер для изменения порядкового номера
                 sendMessage({
                     type: 'change_order_index',
-                    id: id,
+                    targetId: id,
                     orderIndex: randomNumber
                 });
             });
