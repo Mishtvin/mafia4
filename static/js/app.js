@@ -687,6 +687,17 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Received message:', message);
         
         switch (message.type) {
+            case 'balagan':
+                // Сервер сообщает о начале "Балагана" (включение таймера)
+                console.log(`Received balagan message with duration: ${message.duration} seconds`);
+                startTimer(message.duration || 60);
+                break;
+                
+            case 'balagan_confirmed':
+                // Подтверждение для хоста, что сообщение о "Балагане" успешно разослано
+                console.log('Balagan message confirmed by server');
+                break;
+                
             case 'revive_all_confirmed':
                 // Подтверждение снятия статуса "вбито" со всех
                 console.log(`Host revived ${message.count} participants`);
@@ -2092,9 +2103,9 @@ document.addEventListener('DOMContentLoaded', () => {
         balaganAnnouncement.style.opacity = '0';
         balaganAnnouncement.style.animation = 'balaganAppear 0.5s forwards';
         
-        // Шаг 2: Через 1.5 секунды начинаем анимацию перемещения в сторону таймера
+        // Шаг 2: Через 1 секунду начинаем анимацию перемещения в сторону таймера
         setTimeout(() => {
-            balaganAnnouncement.style.animation = 'balaganToTimer 1s forwards';
+            balaganAnnouncement.style.animation = 'balaganToTimer 0.8s forwards';
             
             // Шаг 3: Как только анимация завершена, показываем таймер под анимацией
             setTimeout(() => {
@@ -2104,7 +2115,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Таймер должен быть скрыт под анимацией
                 timerDisplay.style.opacity = '0';
                 
-                // Через 3 секунды скрываем анимацию и показываем таймер
+                // Через 1 секунду скрываем анимацию и показываем таймер
                 setTimeout(() => {
                     // Плавное исчезновение анимации
                     balaganAnnouncement.style.transition = 'opacity 0.5s';
@@ -2119,7 +2130,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         balaganAnnouncement.style.display = 'none';
                         balaganAnnouncement.style.animation = '';
                     }, 500);
-                }, 3000); // Держим "Балаган" поверх таймера 3 секунды
+                }, 1000); // Держим "Балаган" поверх таймера 1 секунду
                 
                 // Запускаем отсчет
                 const startTime = Date.now();
@@ -2146,8 +2157,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
                 }, 1000);
                 
-            }, 1000); // Время анимации перемещения
-        }, 1500); // Время показа анимации в центре
+            }, 800); // Время анимации перемещения
+        }, 1000); // Время показа анимации в центре
     }
     
     // Обработчик клика на кнопку "Балаган"
@@ -2160,7 +2171,13 @@ document.addEventListener('DOMContentLoaded', () => {
             
             console.log('Host is starting a 1-minute timer (Балаган)');
             
-            // Запускаем таймер на 1 минуту (60 секунд)
+            // Отправляем сообщение о начале "Балагана" всем участникам
+            sendMessage({
+                type: 'balagan',
+                duration: 60 // 1 минута в секундах
+            });
+            
+            // Локально запускаем таймер для немедленной обратной связи
             startTimer(60);
         });
     }

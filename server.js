@@ -190,6 +190,11 @@ function handleMessage(clientId, message) {
             handleChangeOrderIndex(clientId, message);
             break;
             
+        case 'balagan':
+            // Обработка сообщения "Балаган" (запуск таймера) от ведущего
+            handleBalagan(clientId, message);
+            break;
+            
         default:
             sendToClient(client.ws, {
                 type: 'error',
@@ -681,6 +686,34 @@ function handleChangeOrderIndex(clientId, message) {
 }
 
 // Generate unique ID
+// Обработка сообщения "Балаган" от ведущего
+function handleBalagan(clientId, message) {
+    const client = clients.get(clientId);
+    if (!client || !client.room) return;
+    
+    // Проверяем, что инициатор - ведущий
+    if (client.role !== 'host') {
+        sendToClient(client.ws, {
+            type: 'error',
+            message: 'Только ведущий может использовать функцию "Балаган"'
+        });
+        return;
+    }
+    
+    console.log(`Host ${clientId} initiated "Балаган" in room ${client.room}`);
+    
+    // Отправляем сообщение всем в комнате о начале "Балагана"
+    broadcastToRoom(client.room, {
+        type: 'balagan',
+        duration: message.duration || 60 // Длительность в секундах (по умолчанию 60)
+    });
+    
+    // Подтверждаем ведущему успешное выполнение команды
+    sendToClient(client.ws, {
+        type: 'balagan_confirmed'
+    });
+}
+
 function generateId() {
     return Math.random().toString(36).substr(2, 9);
 }

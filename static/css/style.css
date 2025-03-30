@@ -68,24 +68,29 @@ body {
         padding: 20px 40px;
         width: auto;
         height: auto;
+        background-color: #8e44ad;
     }
     20% {
         opacity: 1;
         transform: translate(-50%, -50%) scale(1.1);
+        background-color: #8e44ad;
     }
     30% {
         transform: translate(-50%, -50%) scale(1);
+        background-color: #8e44ad;
     }
     100% { 
-        opacity: 1; 
+        opacity: 0.9; 
         top: 25px; 
         left: 50%; 
         transform: translate(-50%, 0) scale(0.8);
         border-radius: 5px;
         padding: 5px 20px;
-        width: 100px;
+        width: 120px;
         height: 40px;
-        background-color: rgba(142, 68, 173, 0.9);
+        font-size: 24px;
+        box-sizing: border-box;
+        background-color: rgba(142, 68, 173, 0.8);
     }
 }
 
