@@ -1051,6 +1051,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // и НЕ добавляем класс killed, чтобы не применять стили черного фона
             let killMark = localVideo.querySelector('.kill-mark');
             
+            // Получаем кнопку закрытия сайдбара
+            const closeSidebarBtn = document.getElementById('close-sidebar');
+            
             if (isKilled) {
                 // Добавляем маркер, если его еще нет
                 if (!killMark) {
@@ -1059,10 +1062,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     killMark.textContent = 'ВБИТО';
                     localVideo.appendChild(killMark);
                 }
+                
+                // Меняем цвет кнопки закрытия на белый, если пользователь "убит"
+                if (closeSidebarBtn) {
+                    closeSidebarBtn.classList.add('white');
+                }
             } else {
                 // Удаляем маркер, если он есть
                 if (killMark) {
                     killMark.remove();
+                }
+                
+                // Возвращаем исходный цвет кнопки закрытия
+                if (closeSidebarBtn) {
+                    closeSidebarBtn.classList.remove('white');
                 }
             }
         }
@@ -1742,7 +1755,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Добавляем кнопку убито только для игроков (не для ведущих)
             // и только если текущий пользователь - ведущий
             const killButtonHtml = !isHost && userRole === 'host' ? 
-                `<button class="kill-button remote-kill-button" data-peer-id="${peerId}" title="Вбито">💀</button>` : '';
+                `<button class="kill-button remote-kill-button" data-peer-id="${peerId}" title="Вбито">👼</button>` : '';
                 
             // Для удаленных участников "ВБИТО" добавляется через CSS оформление,
             // не добавляем отдельный элемент с надписью - это только для локального видео
