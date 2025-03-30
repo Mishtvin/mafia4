@@ -613,6 +613,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add local video to the grid - всегда вставляем в начало
             videoContainer.insertBefore(localVideo, videoContainer.firstChild);
             
+            // Добавляем элементы управления для масштабирования и перемещения видео
+            createVideoControls(localVideo);
+            
             // Добавляем обработчик события для кнопки "вбито"
             const killButton = localVideo.querySelector('.kill-button');
             if (killButton) {
@@ -1726,24 +1729,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Set srcObject for the video element
             videoElement.srcObject = stream;
             
-            // Добавить обработчик контекстного меню
-            videoItem.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                
-                // Сохраняем ID пира для текущего контекстного меню
-                currentSettingsPeerId = peerId;
-                
-                // Устанавливаем позицию контекстного меню
-                videoContextMenu.style.left = `${e.pageX}px`;
-                videoContextMenu.style.top = `${e.pageY}px`;
-                
-                // Показываем контекстное меню
-                videoContextMenu.classList.add('show');
-                
-                document.addEventListener('click', hideContextMenu);
-                
-                return false;
-            });
+            // Удаляем контекстное меню для видео элементов
+            
+            // Добавляем элементы управления видео (масштабирование и перемещение)
+            createVideoControls(videoItem);
             
             // Добавляем в контейнер и сортируем видео по порядковым номерам
             videoContainer.appendChild(videoItem);
@@ -1844,9 +1833,9 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Video elements sorted');
     }
     
+    // Контекстное меню отключено (функция сохранена для совместимости)
     function hideContextMenu() {
-        videoContextMenu.classList.remove('show');
-        document.removeEventListener('click', hideContextMenu);
+        // Ничего не делаем, так как контекстное меню отключено
     }
 
     // Remove a peer and clean up resources
@@ -2519,32 +2508,113 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Обработчик контекстного меню для видео элементов
-    if (videoContainer) {
-        videoContainer.addEventListener('contextmenu', (e) => {
-            // Найти ближайший родительский элемент с классом video-item
-            const videoItem = e.target.closest('.video-item');
-            if (!videoItem) return;
+    // Отключаем контекстное меню для видео элементов
+    document.addEventListener('contextmenu', (e) => {
+        // Найти ближайший родительский элемент с классом video-item
+        const videoItem = e.target.closest('.video-item');
+        if (videoItem) {
+            // Отменить стандартное контекстное меню для всех видео элементов
+            e.preventDefault();
+        }
+    });
+    
+    // Функции для работы с перемещением и масштабированием видео
+    function createVideoControls(videoItem) {
+        if (videoItem.querySelector('.video-controls')) return;
+        
+        const controls = document.createElement('div');
+        controls.className = 'video-controls';
+        controls.innerHTML = `
+            <button class="video-control-btn zoom-in" title="Увеличить"><i>+</i></button>
+            <button class="video-control-btn zoom-out" title="Уменьшить"><i>-</i></button>
+            <button class="video-control-btn reset" title="Сбросить"><i>↺</i></button>
+        `;
+        
+        videoItem.appendChild(controls);
+        
+        // Получаем видео элемент
+        const videoElement = videoItem.querySelector('video');
+        
+        // Добавляем класс для перетаскивания
+        videoItem.classList.add('draggable');
+        
+        // Сохраняем данные о масштабе и смещении для этого видео
+        videoElement.dataset.scale = '1.0';
+        videoElement.dataset.offsetX = '0';
+        videoElement.dataset.offsetY = '0';
+        
+        // Обработчики кнопок управления
+        const zoomIn = controls.querySelector('.zoom-in');
+        const zoomOut = controls.querySelector('.zoom-out');
+        const reset = controls.querySelector('.reset');
+        
+        zoomIn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const currentScale = parseFloat(videoElement.dataset.scale);
+            const newScale = Math.min(currentScale + 0.1, 3.0);
+            videoElement.dataset.scale = newScale.toString();
+            updateVideoTransform(videoElement);
+        });
+        
+        zoomOut.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const currentScale = parseFloat(videoElement.dataset.scale);
+            const newScale = Math.max(currentScale - 0.1, 0.5);
+            videoElement.dataset.scale = newScale.toString();
+            updateVideoTransform(videoElement);
+        });
+        
+        reset.addEventListener('click', (e) => {
+            e.stopPropagation();
+            videoElement.dataset.scale = '1.0';
+            videoElement.dataset.offsetX = '0';
+            videoElement.dataset.offsetY = '0';
+            updateVideoTransform(videoElement);
+        });
+        
+        // Обработчики перетаскивания для видео
+        videoElement.addEventListener('mousedown', (e) => {
+            // Если видео на весь экран, не позволяем перетаскивать
+            const scale = parseFloat(videoElement.dataset.scale);
+            if (scale <= 1.0) return;
             
-            // Если это не локальное видео и имеет id
-            if (videoItem !== localVideo && videoItem.id) {
-                // Получить id пира из id элемента (remote-peerId)
-                const peerId = videoItem.id.replace('remote-', '');
+            e.preventDefault();
+            
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const startOffsetX = parseFloat(videoElement.dataset.offsetX) || 0;
+            const startOffsetY = parseFloat(videoElement.dataset.offsetY) || 0;
+            
+            const mouseMoveHandler = (moveEvent) => {
+                const dx = moveEvent.clientX - startX;
+                const dy = moveEvent.clientY - startY;
                 
-                // Отменить стандартное контекстное меню
-                e.preventDefault();
+                videoElement.dataset.offsetX = (startOffsetX + dx).toString();
+                videoElement.dataset.offsetY = (startOffsetY + dy).toString();
                 
-                // Сохранить peerId в контекстном меню
-                videoContextMenu.dataset.peerId = peerId;
-                
-                // Позиционировать и показать контекстное меню
-                videoContextMenu.style.top = `${e.pageY}px`;
-                videoContextMenu.style.left = `${e.pageX}px`;
-                videoContextMenu.style.display = 'block';
-            }
+                updateVideoTransform(videoElement);
+            };
+            
+            const mouseUpHandler = () => {
+                document.removeEventListener('mousemove', mouseMoveHandler);
+                document.removeEventListener('mouseup', mouseUpHandler);
+            };
+            
+            document.addEventListener('mousemove', mouseMoveHandler);
+            document.addEventListener('mouseup', mouseUpHandler);
         });
     }
     
+    // Функция обновления трансформации видео
+    function updateVideoTransform(videoElement) {
+        const scale = parseFloat(videoElement.dataset.scale) || 1.0;
+        const offsetX = parseFloat(videoElement.dataset.offsetX) || 0;
+        const offsetY = parseFloat(videoElement.dataset.offsetY) || 0;
+        
+        videoElement.style.transform = `scale(${scale}) translate(${offsetX / scale}px, ${offsetY / scale}px)`;
+    }
+    
+    // Отключаем создание и отображение контекстного меню для видео
     // Обработчик клика на переименование в контекстном меню
     const renamePeerAction = document.querySelector('.rename-peer-action');
     if (renamePeerAction) {
@@ -2569,12 +2639,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Скрыть контекстное меню при клике вне его
-    document.addEventListener('click', () => {
-        if (videoContextMenu) {
-            videoContextMenu.style.display = 'none';
-        }
-    });
+    // Контекстное меню отключено (right-click на пользователях)
 
     // Show error message
     // Показать диалог для изменения порядкового номера
