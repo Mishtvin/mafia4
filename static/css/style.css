@@ -549,6 +549,35 @@ body {
     cursor: text;
 }
 
+/* Стиль для уведомления в конце таймера */
+#stop-balagan-announcement {
+    position: fixed;
+    z-index: 9999;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ff0000;
+    color: white;
+    font-size: 36px;
+    font-weight: bold;
+    padding: 30px 50px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    display: none;
+}
+
+@keyframes stopBalaganAppear {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes stopBalaganDisappear {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+}
+
 /* Modals in dark theme */
 .modal-content {
     background-color: #2d2d2d;

@@ -693,6 +693,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 startTimer(message.duration || 60);
                 break;
                 
+            case 'stop_balagan':
+                // Сообщение о завершении "Балагана" - показываем уведомление
+                console.log('Received stop_balagan message');
+                
+                // Показываем уведомление "Чічічі Стоп Балаган" если таймер уже не отображается
+                if (timerContainer.style.display === 'none') {
+                    const stopBalaganAnnouncement = document.getElementById('stop-balagan-announcement');
+                    if (stopBalaganAnnouncement) {
+                        stopBalaganAnnouncement.style.display = 'block';
+                        stopBalaganAnnouncement.style.animation = 'stopBalaganAppear 0.5s forwards';
+                        
+                        // Через 1.5 секунды скрываем сообщение
+                        setTimeout(() => {
+                            stopBalaganAnnouncement.style.animation = 'stopBalaganDisappear 0.5s forwards';
+                            
+                            // После завершения анимации полностью убираем элемент
+                            setTimeout(() => {
+                                stopBalaganAnnouncement.style.display = 'none';
+                                stopBalaganAnnouncement.style.animation = '';
+                            }, 500);
+                        }, 1500);
+                    }
+                }
+                break;
+                
             case 'balagan_confirmed':
                 // Подтверждение для хоста, что сообщение о "Балагане" успешно разослано
                 console.log('Balagan message confirmed by server');
@@ -2097,6 +2122,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Функция для запуска и отображения таймера с анимацией
     function startTimer(durationInSeconds) {
         const balaganAnnouncement = document.getElementById('balagan-announcement');
+        const stopBalaganAnnouncement = document.getElementById('stop-balagan-announcement');
         
         // Шаг 1: Показываем анимацию с текстом "Балаган" в центре
         balaganAnnouncement.style.display = 'block';
@@ -2131,6 +2157,22 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Таймер закончился
                         clearInterval(timerInterval);
                         timerContainer.style.display = 'none';
+                        
+                        // Показываем уведомление "Чічічі Стоп Балаган"
+                        stopBalaganAnnouncement.style.display = 'block';
+                        stopBalaganAnnouncement.style.animation = 'stopBalaganAppear 0.5s forwards';
+                        
+                        // Через 1.5 секунды скрываем сообщение
+                        setTimeout(() => {
+                            stopBalaganAnnouncement.style.animation = 'stopBalaganDisappear 0.5s forwards';
+                            
+                            // После завершения анимации полностью убираем элемент
+                            setTimeout(() => {
+                                stopBalaganAnnouncement.style.display = 'none';
+                                stopBalaganAnnouncement.style.animation = '';
+                            }, 500);
+                        }, 1500);
+                        
                         return;
                     }
                     

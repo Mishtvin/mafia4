@@ -702,11 +702,21 @@ function handleBalagan(clientId, message) {
     
     console.log(`Host ${clientId} initiated "Балаган" in room ${client.room}`);
     
+    const duration = message.duration || 60; // Длительность в секундах (по умолчанию 60)
+    
     // Отправляем сообщение всем в комнате о начале "Балагана"
     broadcastToRoom(client.room, {
         type: 'balagan',
-        duration: message.duration || 60 // Длительность в секундах (по умолчанию 60)
+        duration: duration
     });
+    
+    // Устанавливаем таймер для отправки сообщения о завершении таймера
+    setTimeout(() => {
+        broadcastToRoom(client.room, {
+            type: 'stop_balagan'
+        });
+        console.log(`Balagan timer ended in room ${client.room}`);
+    }, duration * 1000);
     
     // Подтверждаем ведущему успешное выполнение команды
     sendToClient(client.ws, {
