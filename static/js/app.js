@@ -1118,11 +1118,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const killButton = videoElement.querySelector('.remote-kill-button');
             if (killButton) {
                 killButton.innerHTML = peer.killed ? '👼' : '💀';
-                // Добавляем или удаляем класс angel-icon для ангелочка
-                if (peer.killed) {
-                    killButton.classList.add('angel-icon');
-                } else {
-                    killButton.classList.remove('angel-icon');
+                // Для ведущего не добавляем angel-icon класс, чтобы кнопка оставалась кликабельной
+                // Для обычных пользователей добавляем класс, чтобы сделать иконку некликабельной
+                if (userRole !== 'host') {
+                    if (peer.killed) {
+                        killButton.classList.add('angel-icon');
+                    } else {
+                        killButton.classList.remove('angel-icon');
+                    }
                 }
             }
         }
@@ -1792,8 +1795,9 @@ document.addEventListener('DOMContentLoaded', () => {
             let killButtonHtml = '';
             if (!isHost) {
                 if (userRole === 'host') {
-                    // Для ведущего - кнопка всегда видна и кликабельна 
-                    killButtonHtml = `<button class="kill-button remote-kill-button${angelClass}" data-peer-id="${peerId}" title="Вбито">${isKilled ? '👼' : '💀'}</button>`;
+                    // Для ведущего - кнопка всегда видна и кликабельна (даже ангелочек)
+                    // НЕ добавляем класс angel-icon, чтобы кнопка оставалась кликабельной
+                    killButtonHtml = `<button class="kill-button remote-kill-button" data-peer-id="${peerId}" title="Вбито">${isKilled ? '👼' : '💀'}</button>`;
                 } else if (isKilled) {
                     // Для обычных игроков - показываем только ангелочка для убитых
                     killButtonHtml = `<button class="kill-button angel-icon" title="Вбито">👼</button>`;
