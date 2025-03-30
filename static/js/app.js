@@ -4,14 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // DOM elements
     const joinForm = document.getElementById('join-form');
-    const usernameInput = document.getElementById('username');
-    const videoEnabledCheckbox = document.getElementById('video-enabled');
-    const videoQualitySelect = document.getElementById('video-quality');
-    const customVideoSettings = document.getElementById('custom-video-settings');
-    const videoWidthInput = document.getElementById('video-width');
-    const videoHeightInput = document.getElementById('video-height');
-    const videoBitrateInput = document.getElementById('video-bitrate');
-    const cameraSelectLogin = document.getElementById('camera-select-login');
     const cameraSelect = document.getElementById('camera-select');
     const loginSection = document.getElementById('login-section');
     const conferenceSection = document.getElementById('conference-section');
@@ -165,25 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Показать/скрыть пользовательские настройки видео при входе
-    if (videoQualitySelect) {
-        videoQualitySelect.addEventListener('change', () => {
-            const selectedQuality = videoQualitySelect.value;
-            if (customVideoSettings) {
-                customVideoSettings.style.display = selectedQuality === 'custom' ? 'block' : 'none';
-            }
-            
-            if (selectedQuality !== 'custom') {
-                // Установить значения из пресета
-                const preset = videoQualityPresets[selectedQuality];
-                if (preset) {
-                    if (videoWidthInput) videoWidthInput.value = preset.width;
-                    if (videoHeightInput) videoHeightInput.value = preset.height;
-                    if (videoBitrateInput) videoBitrateInput.value = preset.bitrate;
-                }
-            }
-        });
-    }
+    // Удалены обработчики для настройки видео при входе, так как они перенесены в настройки после входа
     
     // Показать/скрыть пользовательские настройки видео для локального видео
     if (localVideoQualitySelect) {
@@ -401,73 +375,40 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Обработчик события выбора камеры в форме логина
-    if (cameraSelectLogin) {
-        cameraSelectLogin.addEventListener('change', () => {
-            selectedCameraId = cameraSelectLogin.value;
-            console.log('Login form: Camera changed to:', selectedCameraId);
-        });
-    }
+    // Обработчик события выбора камеры в форме логина удален
     
+    // Функция генерации случайного имени
+    function generateRandomUsername() {
+        const adjectives = ['Яркий', 'Быстрый', 'Смелый', 'Тихий', 'Громкий', 'Умный', 'Сильный', 'Веселый', 'Добрый', 'Милый'];
+        const nouns = ['Лев', 'Волк', 'Орел', 'Тигр', 'Дельфин', 'Сокол', 'Медведь', 'Лиса', 'Пингвин', 'Енот'];
+        
+        const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
+        const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+        const randomNumber = Math.floor(Math.random() * 100);
+        
+        return `${randomAdj}${randomNoun}${randomNumber}`;
+    }
+
     // Join form submission handler
     if (joinForm) {
         joinForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            if (!usernameInput || !videoEnabledCheckbox || !videoQualitySelect) {
-                showError('Some form elements are missing. Please refresh the page and try again.');
-                return;
-            }
-            
-            username = usernameInput.value.trim();
+            // Генерируем случайное имя пользователя
+            username = generateRandomUsername();
             roomname = 'default'; // Всегда используем комнату default
-            videoEnabled = videoEnabledCheckbox.checked;
+            videoEnabled = true;  // Всегда включаем видео
             
-            // Получим выбранную камеру
-            if (cameraSelectLogin && cameraSelectLogin.value) {
-                selectedCameraId = cameraSelectLogin.value;
-            }
+            // Задаем настройки видео по умолчанию (средние)
+            const preset = videoQualityPresets.medium;
+            let videoConstraints = {
+                width: { ideal: preset.width },
+                height: { ideal: preset.height },
+                facingMode: 'user'
+            };
             
-            // Получить настройки качества видео
-            const selectedQuality = videoQualitySelect.value;
-            let videoConstraints = {};
-            
-            if (videoEnabled) {
-                if (selectedQuality === 'custom') {
-                    if (!videoWidthInput || !videoHeightInput || !videoBitrateInput) {
-                        showError('Custom video settings elements are missing. Please refresh the page and try again.');
-                        return;
-                    }
-                    
-                    const width = parseInt(videoWidthInput.value, 10);
-                    const height = parseInt(videoHeightInput.value, 10);
-                    const bitrate = parseInt(videoBitrateInput.value, 10);
-                    
-                    videoConstraints = {
-                        width: { ideal: width },
-                        height: { ideal: height },
-                        facingMode: 'user'
-                    };
-                    
-                    // Сохраняем битрейт для будущего использования
-                    window.customBitrate = bitrate;
-                } else {
-                    const preset = videoQualityPresets[selectedQuality];
-                    videoConstraints = {
-                        width: { ideal: preset.width },
-                        height: { ideal: preset.height },
-                        facingMode: 'user'
-                    };
-                    
-                    // Сохраняем битрейт для будущего использования
-                    window.customBitrate = preset.bitrate;
-                }
-                
-                // Добавим выбор устройства, если оно указано
-                if (selectedCameraId) {
-                    videoConstraints.deviceId = { exact: selectedCameraId };
-                }
-            }
+            // Сохраняем битрейт для будущего использования
+            window.customBitrate = preset.bitrate;
             
             try {
                 await setupLocalStream(videoConstraints);
@@ -497,38 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             console.log('Available cameras:', availableCameras);
             
-            // Обновить селекторы камер
-            if (cameraSelectLogin) {
-                // Сохраним текущее значение
-                const currentValue = cameraSelectLogin.value;
-                
-                // Очистим выпадающий список
-                cameraSelectLogin.innerHTML = '';
-                
-                if (videoDevices.length === 0) {
-                    const option = document.createElement('option');
-                    option.value = '';
-                    option.text = 'No cameras found';
-                    cameraSelectLogin.appendChild(option);
-                } else {
-                    videoDevices.forEach(device => {
-                        const option = document.createElement('option');
-                        option.value = device.deviceId;
-                        option.text = device.label || `Camera ${videoDevices.indexOf(device) + 1}`;
-                        cameraSelectLogin.appendChild(option);
-                    });
-                    
-                    // Если у нас был выбранный deviceId, попробуем его восстановить
-                    if (currentValue && videoDevices.some(d => d.deviceId === currentValue)) {
-                        cameraSelectLogin.value = currentValue;
-                    } else {
-                        // Иначе выберем первую камеру
-                        cameraSelectLogin.value = videoDevices[0].deviceId;
-                    }
-                    
-                    selectedCameraId = cameraSelectLogin.value;
-                }
-            }
+            // Селектор камеры при логине удален
             
             if (cameraSelect) {
                 // Сохраним текущее значение
@@ -581,10 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await loadCameras();
             }
             
-            // Получим выбранную камеру из селекторов
-            if (cameraSelectLogin && cameraSelectLogin.value) {
-                selectedCameraId = cameraSelectLogin.value;
-            }
+            // Выбор камеры при входе удален
             
             // Try to get camera with different fallback options
             let stream = null;
