@@ -946,13 +946,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (localVideo) {
             const label = localVideo.querySelector('.video-label');
             if (label) {
+                // Добавляем порядковый номер перед именем и метку ведущего в конце
+                const orderPrefix = userOrderIndex ? `${userOrderIndex}. ` : '';
+                
                 // Для роли ведущего добавляем (ведущий) после имени
                 if (userRole === 'host') {
-                    console.log(`DEBUG: Setting label for HOST: You (${username}) (ведущий)`);
-                    label.textContent = `You (${username}) (ведущий)`;
+                    console.log(`DEBUG: Setting label for HOST: ${orderPrefix}You (${username}) (ведущий)`);
+                    label.textContent = `${orderPrefix}You (${username}) (ведущий)`;
                 } else {
-                    console.log(`DEBUG: Setting label for PLAYER: You (${username})`);
-                    label.textContent = `You (${username})`;
+                    console.log(`DEBUG: Setting label for PLAYER: ${orderPrefix}You (${username})`);
+                    label.textContent = `${orderPrefix}You (${username})`;
                 }
                 console.log(`DEBUG: Final label content: "${label.textContent}"`);
             } else {
@@ -978,19 +981,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const localName = localPeerNames.get(peerId);
         const peer = peers.get(peerId);
         
+        if (!peer) {
+            label.textContent = 'Participant';
+            return;
+        }
+        
+        // Добавляем порядковый номер перед именем
+        const orderPrefix = peer.orderIndex ? `${peer.orderIndex}. ` : '';
+        
         if (localName) {
             // Добавляем (ведущий) для пиров с ролью host
             if (peer && (peer.role === 'host' || peer.isHost)) {
-                label.textContent = `${localName} (ведущий)`;
+                label.textContent = `${orderPrefix}${localName} (ведущий)`;
             } else {
-                label.textContent = localName;
+                label.textContent = `${orderPrefix}${localName}`;
             }
         } else if (peer) {
             // Добавляем (ведущий) для пиров с ролью host
             if (peer.role === 'host' || peer.isHost) {
-                label.textContent = `${peer.username} (ведущий)`;
+                label.textContent = `${orderPrefix}${peer.username} (ведущий)`;
             } else {
-                label.textContent = peer.username;
+                label.textContent = `${orderPrefix}${peer.username}`;
             }
         } else {
             label.textContent = 'Participant';
@@ -1394,11 +1405,14 @@ document.addEventListener('DOMContentLoaded', () => {
             let displayName = 'Participant';
             let isHost = peer && (peer.role === 'host' || peer.isHost);
             
+            // Добавляем порядковый номер перед именем
+            const orderPrefix = peer && peer.orderIndex ? `${peer.orderIndex}. ` : '';
+            
             if (localName) {
                 // Если есть локальное имя, используем его
-                displayName = localName;
+                displayName = orderPrefix + localName;
             } else if (peer && peer.username) {
-                displayName = peer.username;
+                displayName = orderPrefix + peer.username;
             }
             
             // Добавляем метку ведущего, если у пира роль "host"
