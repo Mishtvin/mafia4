@@ -1,0 +1,57 @@
+Assigning random order index 2 to player vjwfmwgi5
+app.js:26 Assigning random order index 1 to player 8nrjvcshk
+app.js:26 Received message: {type: 'order_index_changed_confirmed', id: 'vjwfmwgi5', orderIndex: 2}
+app.js:26 Received message: {type: 'order_index_changed_confirmed', id: '8nrjvcshk', orderIndex: 1}
+app.js:26 Found 2 players for randomizing order numbers
+app.js:26 Assigning random order index 2 to player vjwfmwgi5
+app.js:26 Assigning random order index 1 to player 8nrjvcshk
+app.js:26 Received message: {type: 'order_index_changed_confirmed', id: 'vjwfmwgi5', orderIndex: 2}
+app.js:26 Received message: {type: 'order_index_changed_confirmed', id: '8nrjvcshk', orderIndex: 1}
+app.js:26 Received message: {type: 'server_resources', resources: {…}}
+app.js:26 Server resources - CPU: 22.5%, Memory: 91.4%, Connections: 3, Recommended bitrate: 359 kbps
+app.js:26 Auto-adjusting bitrate to server recommended value: 359 kbps
+app.js:26 Current video track settings: {aspectRatio: 1.7777777777777777, deviceId: 'f558e5240337ad21a1848e05eb738c8d469cea6651445acd707d5613fd943d2c', facingMode: 'environment', frameRate: 60, groupId: 'cbf0a3b5df949e12d1744ebb672a1d640942121e4fad88f8d0b37387d07724fd', …}
+2app.js:26 Successfully replaced video track
+2app.js:26 Set bitrate for outgoing video: 359 kbps
+app.js:26 Found 2 players for randomizing order numbers
+app.js:26 Assigning random order index 1 to player vjwfmwgi5
+app.js:26 Assigning random order index 2 to player 8nrjvcshk
+app.js:26 Received message: {type: 'order_index_changed_confirmed', id: 'vjwfmwgi5', orderIndex: 1}
+app.js:26 Received message: {type: 'order_index_changed_confirmed', id: '8nrjvcshk', orderIndex: 2}
+app.js:26 Found 2 players for randomizing order numbers
+app.js:26 Assigning random order index 1 to player vjwfmwgi5
+app.js:26 Assigning random order index 2 to player 8nrjvcshk
+app.js:26 Received message: {type: 'server_resources', resources: {…}}
+app.js:26 Server resources - CPU: 40.7%, Memory: 91.2%, Connections: 3, Recommended bitrate: 327 kbps
+app.js:26 Auto-adjusting bitrate to server recommended value: 327 kbps
+app.js:26 Current video track settings: {aspectRatio: 1.7777777777777777, deviceId: 'f558e5240337ad21a1848e05eb738c8d469cea6651445acd707d5613fd943d2c', facingMode: 'environment', frameRate: 60, groupId: 'cbf0a3b5df949e12d1744ebb672a1d640942121e4fad88f8d0b37387d07724fd', …}
+2app.js:26 Successfully replaced video track
+2app.js:26 Set bitrate for outgoing video: 327 kbps
+app.js:26 Received message: {type: 'order_index_changed_confirmed', id: 'vjwfmwgi5', orderIndex: 1}
+app.js:26 Received message: {type: 'order_index_changed_confirmed', id: '8nrjvcshk', orderIndex: 2}
+app.js:26 Found 2 players for randomizing order numbers
+app.js:26 Assigning random order index 2 to player vjwfmwgi5
+app.js:26 Assigning random order index 1 to player 8nrjvcshk
+app.js:26 Received message: {type: 'order_index_changed_confirmed', id: 'vjwfmwgi5', orderIndex: 2}
+app.js:26 Received message: {type: 'order_index_changed_confirmed', id: '8nrjvcshk', orderIndex: 1}
+app.js:26 Found 2 players for randomizing order numbers
+app.js:26 Assigning random order index 2 to player vjwfmwgi5
+app.js:26 Assigning random order index 1 to player 8nrjvcshk
+app.js:26 Received message: {type: 'server_resources', resources: {…}}
+app.js:26 Server resources - CPU: 30.3%, Memory: 91.1%, Connections: 3, Recommended bitrate: 346 kbps
+app.js:26 Auto-adjusting bitrate to server recommended value: 346 kbps
+app.js:26 Current video track settings: {aspectRatio: 1.7777777777777777, deviceId: 'f558e5240337ad21a1848e05eb738c8d469cea6651445acd707d5613fd943d2c', facingMode: 'environment', frameRate: 60, groupId: 'cbf0a3b5df949e12d1744ebb672a1d640942121e4fad88f8d0b37387d07724fd', …}
+2app.js:26 Successfully replaced video track
+2app.js:26 Set bitrate for outgoing video: 346 kbps
+app.js:26 Received message: {type: 'order_index_changed_confirmed', id: 'vjwfmwgi5', orderIndex: 2}
+app.js:26 Received message: {type: 'order_index_changed_confirmed', id: '8nrjvcshk', orderIndex: 1}
+app.js:26 Received message: {type: 'server_resources', resources: {…}}
+app.js:26 Server resources - CPU: 50.3%, Memory: 91.5%, Connections: 3, Recommended bitrate: 309 kbps
+app.js:26 Auto-adjusting bitrate to server recommended value: 309 kbps
+app.js:26 Current video track settings: {aspectRatio: 1.7777777777777777, deviceId: 'f558e5240337ad21a1848e05eb738c8d469cea6651445acd707d5613fd943d2c', facingMode: 'environment', frameRate: 60, groupId: 'cbf0a3b5df949e12d1744ebb672a1d640942121e4fad88f8d0b37387d07724fd', …}
+2app.js:26 Successfully replaced video track
+2app.js:26 Set bitrate for outgoing video: 309 kbps
+app.js:26 Received message: {type: 'server_resources', resources: {…}}
+app.js:26 Server resources - CPU: 66.9%, Memory: 91.6%, Connections: 3, Recommended bitrate: 279 kbps
+app.js:26 Auto-adjusting bitrate to server recommended value: 279 kbps
+app.js:26 Current video track settings: {aspectRatio: 1.7777777777777777, deviceId: 'f558e5240337ad21a1848e05eb738c8d469cea6651445acd707d5613fd943d2c', facingMode: 'environment', frameRate: 60, groupId: 'cbf0a3b5df949e12d1744ebb672a1d640942121e4fad88f8d0b37387d07724fd', …}

@@ -1,0 +1,81 @@
+0|webrtc-app  | Forwarding ICE candidate from ytyqs8u57 to 4w9810bjk
+0|webrtc-app  | Received message of type sdp from client g47tfgv1r
+0|webrtc-app  | Forwarding answer from g47tfgv1r to ytyqs8u57
+0|webrtc-app  | Received message of type ice from client g47tfgv1r
+0|webrtc-app  | Forwarding ICE candidate from g47tfgv1r to ytyqs8u57
+0|webrtc-app  | Received message of type ice from client ytyqs8u57
+0|webrtc-app  | Forwarding ICE candidate from ytyqs8u57 to 4w9810bjk
+0|webrtc-app  | Received message of type ice from client ytyqs8u57
+0|webrtc-app  | Forwarding ICE candidate from ytyqs8u57 to g47tfgv1r
+0|webrtc-app  | Received message of type ice from client g47tfgv1r
+0|webrtc-app  | Forwarding ICE candidate from g47tfgv1r to ytyqs8u57
+0|webrtc-app  | Received message of type sdp from client 4w9810bjk
+0|webrtc-app  | Forwarding answer from 4w9810bjk to ytyqs8u57
+0|webrtc-app  | Received message of type ice from client 4w9810bjk
+0|webrtc-app  | Forwarding ICE candidate from 4w9810bjk to ytyqs8u57
+0|webrtc-app  | Received message of type ice from client 4w9810bjk
+0|webrtc-app  | Forwarding ICE candidate from 4w9810bjk to ytyqs8u57
+0|webrtc-app  | Received message of type ice from client ytyqs8u57
+0|webrtc-app  | Forwarding ICE candidate from ytyqs8u57 to g47tfgv1r
+0|webrtc-app  | Received message of type ice from client ytyqs8u57
+0|webrtc-app  | Forwarding ICE candidate from ytyqs8u57 to 4w9810bjk
+0|webrtc-app  | Received message of type ice from client g47tfgv1r
+0|webrtc-app  | Forwarding ICE candidate from g47tfgv1r to ytyqs8u57
+0|webrtc-app  | Received message of type ice from client 4w9810bjk
+0|webrtc-app  | Forwarding ICE candidate from 4w9810bjk to ytyqs8u57
+^[[A^[[B0|webrtc-app  | New WebSocket connection
+0|webrtc-app  | Received message of type join from client g9pkd2ake
+0|webrtc-app  | Assigned order index 3 to player g9pkd2ake
+0|webrtc-app  | Client g9pkd2ake (LKGW211) joined room: default
+0|webrtc-app  | Room default now has 4 participants:
+0|webrtc-app  | - g47tfgv1r (EKNL524)
+0|webrtc-app  | - 4w9810bjk (OUWO451)
+0|webrtc-app  | - ytyqs8u57 (OZCR558)
+0|webrtc-app  | - g9pkd2ake (LKGW211)
+0|webrtc-app  | Received message of type sdp from client ytyqs8u57
+0|webrtc-app  | Forwarding offer from ytyqs8u57 to g9pkd2ake
+0|webrtc-app  | Received message of type ice from client ytyqs8u57
+0|webrtc-app  | Forwarding ICE candidate from ytyqs8u57 to g9pkd2ake
+0|webrtc-app  | Received message of type sdp from client g9pkd2ake
+0|webrtc-app  | Forwarding offer from g9pkd2ake to g47tfgv1r
+0|webrtc-app  | Received message of type sdp from client g9pkd2ake
+0|webrtc-app  | Forwarding offer from g9pkd2ake to 4w9810bjk
+0|webrtc-app  | Received message of type sdp from client g9pkd2ake
+0|webrtc-app  | Forwarding offer from g9pkd2ake to ytyqs8u57
+0|webrtc-app  | Received message of type ice from client ytyqs8u57
+0|webrtc-app  | Forwarding ICE candidate from ytyqs8u57 to g9pkd2ake
+0|webrtc-app  | Received message of type sdp from client g47tfgv1r
+0|webrtc-app  | Forwarding answer from g47tfgv1r to g9pkd2ake
+0|webrtc-app  | Received message of type ice from client g47tfgv1r
+0|webrtc-app  | Forwarding ICE candidate from g47tfgv1r to g9pkd2ake
+0|webrtc-app  | Received message of type ice from client g47tfgv1r
+0|webrtc-app  | Forwarding ICE candidate from g47tfgv1r to g9pkd2ake
+0|webrtc-app  | Received message of type ice from client g9pkd2ake
+0|webrtc-app  | Forwarding ICE candidate from g9pkd2ake to g47tfgv1r
+0|webrtc-app  | Received message of type ice from client g9pkd2ake
+0|webrtc-app  | Forwarding ICE candidate from g9pkd2ake to g47tfgv1r
+0|webrtc-app  | Received message of type ice from client g9pkd2ake
+0|webrtc-app  | Forwarding ICE candidate from g9pkd2ake to g47tfgv1r
+0|webrtc-app  | Received message of type ice from client g9pkd2ake
+0|webrtc-app  | Forwarding ICE candidate from g9pkd2ake to g47tfgv1r
+0|webrtc-app  | Received message of type ice from client g9pkd2ake
+0|webrtc-app  | Forwarding ICE candidate from g9pkd2ake to 4w9810bjk
+0|webrtc-app  | Received message of type ice from client g9pkd2ake
+0|webrtc-app  | Forwarding ICE candidate from g9pkd2ake to 4w9810bjk
+0|webrtc-app  | Received message of type ice from client g9pkd2ake
+0|webrtc-app  | Forwarding ICE candidate from g9pkd2ake to 4w9810bjk
+0|webrtc-app  | Received message of type ice from client g9pkd2ake
+0|webrtc-app  | Forwarding ICE candidate from g9pkd2ake to 4w9810bjk
+0|webrtc-app  | Received message of type sdp from client g9pkd2ake
+0|webrtc-app  | Forwarding answer from g9pkd2ake to ytyqs8u57
+0|webrtc-app  | Received message of type ice from client g9pkd2ake
+0|webrtc-app  | Forwarding ICE candidate from g9pkd2ake to ytyqs8u57
+0|webrtc-app  | Received message of type ice from client g9pkd2ake
+0|webrtc-app  | Forwarding ICE candidate from g9pkd2ake to ytyqs8u57
+0|webrtc-app  | Received message of type ice from client g9pkd2ake
+0|webrtc-app  | Forwarding ICE candidate from g9pkd2ake to ytyqs8u57
+0|webrtc-app  | Received message of type ice from client g9pkd2ake
+0|webrtc-app  | Forwarding ICE candidate from g9pkd2ake to ytyqs8u57
+0|webrtc-app  | Received message of type ice from client g9pkd2ake
+0|webrtc-app  | Forwarding ICE candidate from g9pkd2ake to 4w9810bjk
+0|webrtc-app  | Received message of type ice from client g9pkd2ake

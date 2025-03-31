@@ -42,22 +42,22 @@
             <div class="sidebar-section">
                 
                 <div class="mb-3">
-                    <label for="camera-select" class="form-label">Камера</label>
+                    <label for="camera-select" class="form-label">Оберіть камеру</label>
                     <select class="form-select" id="camera-select">
                         <option value="">Завантаження камер...</option>
                     </select>
                 </div>
                 
                 <div class="mb-3">
-                    <label for="sidebar-video-quality" class="form-label">Якість відео</label>
+                    <label for="sidebar-video-quality" class="form-label">Якість відео (відправка)</label>
                     <select class="form-select" id="sidebar-video-quality">
-                        <option value="low">Низька (180p)</option>
-                        <option value="medium" selected>Середня (480p)</option>
-                        <option value="high">Висока (720p)</option>
-                        <option value="hd">HD (1080p)</option>
-                        <option value="uhd">4K (2160p)</option>
-                        <option value="custom">Власна</option>
+                        <option value="sd" data-width="640" data-height="480" data-bitrate="800" selected>🔹 SD якість (480p)</option>
+                        <option value="hd" data-width="1280" data-height="720" data-bitrate="1500">🔸 HD якість (720p)</option>
+                        <option value="fullhd" data-width="1920" data-height="1080" data-bitrate="3000">🔺 Full HD якість (1080p)</option>
                     </select>
+                    <div id="current-quality-info" class="mt-1">
+                        <small class="text-info">Поточна якість: <span id="current-resolution-display">480p</span> • <span id="current-bitrate-info">0 кбіт/с</span></small>
+                    </div>
                 </div>
                 <div id="sidebar-custom-video-settings" class="mb-3" style="display: none;">
                     <div class="mb-3">
@@ -69,14 +69,39 @@
                         <input type="number" class="form-control" id="sidebar-video-height" value="480">
                     </div>
                 </div>
-                <div class="mb-3">
-                    <label for="sidebar-video-bitrate" class="form-label">Бітрейт (кбіт/с)</label>
-                    <input type="number" class="form-control" id="sidebar-video-bitrate" value="1000" min="100" max="8000">
-                    <small class="text-muted">Діапазон: 100-8000 кбіт/с</small>
+                <!-- Информация о битрейте теперь показывается рядом с разрешением -->
+                <div class="mb-3" id="bitrate-settings-container" style="display: none;"></div>
+                
+                <!-- Качество входящего видео от других участников - временно отключено по запросу пользователя -->
+                <div class="mb-3" id="remote-video-quality-container" style="display: none;">
+                    <label class="form-label">Якість вхідного відео</label>
+                    <select class="form-select" id="remote-video-quality">
+                        <option value="original" selected>Оригінальна якість</option>
+                        <option value="sd">🔹 SD якість (480p)</option>
+                        <option value="low">🔻 Низька якість (360p)</option>
+                        <option value="lowest">⚡ Мінімальна якість (240p)</option>
+                    </select>
+                    <div>
+                        <small class="text-muted">Нижча якість знижує навантаження на ваш комп'ютер</small>
+                    </div>
                 </div>
+                
                 <button type="button" class="btn btn-primary w-100 mb-3" id="apply-sidebar-video-settings-btn">
                     Застосувати
                 </button>
+                
+                <!-- Управление камерой --> 
+                <div class="mb-3">
+                    <label class="form-label">Управління камерою</label>
+                    <div class="d-flex">
+                        <button type="button" class="btn btn-primary flex-grow-1 me-2" id="sidebar-enable-camera-btn">
+                            <i class="camera-icon">📹</i> Включити
+                        </button>
+                        <button type="button" class="btn btn-danger flex-grow-1" id="sidebar-disable-camera-btn">
+                            <i class="camera-icon">🚫</i> Виключити
+                        </button>
+                    </div>
+                </div>
                 
                 <!-- Host Controls Section (visible only for hosts) -->
                 <div id="host-controls-section" class="mb-4" style="display: none;">
@@ -197,7 +222,8 @@
             <a class="dropdown-item rename-peer-action" href="#">
                 <span data-feather="edit"></span> Перейменувати (тільки для вас)
             </a>
-            <a class="dropdown-item video-settings-action" href="#" data-bs-toggle="modal" data-bs-target="#video-settings-modal">
+            <!-- Налаштування видео для удаленных пользователей временно отключены -->
+            <a class="dropdown-item video-settings-action" href="#" data-bs-toggle="modal" data-bs-target="#video-settings-modal" style="display: none;">
                 <span data-feather="settings"></span> Налаштування відео
             </a>
         </div>
@@ -214,12 +240,9 @@
                         <div class="mb-3">
                             <label for="peer-video-quality" class="form-label">Якість відео</label>
                             <select class="form-select" id="peer-video-quality">
-                                <option value="low">Низька (180p)</option>
-                                <option value="medium" selected>Середня (480p)</option>
-                                <option value="high">Висока (720p)</option>
-                                <option value="hd">HD (1080p)</option>
-                                <option value="uhd">4K (2160p)</option>
-                                <option value="custom">Власна</option>
+                                <option value="sd" data-width="640" data-height="480" data-bitrate="800" selected>🔹 SD якість (480p)</option>
+                                <option value="hd" data-width="1280" data-height="720" data-bitrate="1500">🔸 HD якість (720p)</option>
+                                <option value="fullhd" data-width="1920" data-height="1080" data-bitrate="3000">🔺 Full HD якість (1080p)</option>
                             </select>
                         </div>
                         <div id="peer-custom-video-settings" class="mb-3" style="display: none;">
@@ -258,12 +281,9 @@
                         <div class="mb-3">
                             <label for="local-video-quality" class="form-label">Якість відео</label>
                             <select class="form-select" id="local-video-quality">
-                                <option value="low">Низька (180p)</option>
-                                <option value="medium" selected>Середня (480p)</option>
-                                <option value="high">Висока (720p)</option>
-                                <option value="hd">HD (1080p)</option>
-                                <option value="uhd">4K (2160p)</option>
-                                <option value="custom">Власна</option>
+                                <option value="sd" data-width="640" data-height="480" data-bitrate="800" selected>🔹 SD якість (480p)</option>
+                                <option value="hd" data-width="1280" data-height="720" data-bitrate="1500">🔸 HD якість (720p)</option>
+                                <option value="fullhd" data-width="1920" data-height="1080" data-bitrate="3000">🔺 Full HD якість (1080p)</option>
                             </select>
                         </div>
                         <div id="local-custom-video-settings" class="mb-3" style="display: none;">

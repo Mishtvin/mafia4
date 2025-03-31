@@ -7,13 +7,35 @@ body {
 .video-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-auto-rows: 1fr;
+    grid-template-rows: repeat(3, 1fr);
     gap: 15px;
-    width: 100%;
-    height: calc(100vh - 50px); /* Уменьшаем высоту на 50px для отступа под таймер */
+    width: 95%; /* Уменьшаем до 95% ширины экрана */
+    height: calc(100vh - 65px); /* Увеличиваем отступ сверху */
     padding: 15px;
-    margin-top: 50px; /* Добавляем отступ сверху для таймера */
+    margin: 25px auto 20px auto; /* Увеличиваем верхний отступ до 25px */
     box-sizing: border-box;
+    max-height: 90vh; /* Ограничиваем максимальную высоту */
+}
+
+/* Пустой слот для сетки */
+.empty-slot {
+    background-color: rgba(50, 50, 50, 0.3);
+    border-radius: 8px;
+    border: 2px dashed #444;
+    min-height: 120px; /* Уменьшаем минимальную высоту */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-size: 14px;
+    width: 95%; /* Уменьшаем ширину пустого слота */
+    margin: 0 auto; /* Центрируем пустой слот */
+    aspect-ratio: 16/9; /* Поддерживаем соотношение сторон */
+}
+
+.empty-slot.drag-over {
+    background-color: rgba(138, 43, 226, 0.3);
+    border-color: #8a2be2;
 }
 
 /* Стили для таймера */
@@ -101,9 +123,63 @@ body {
     overflow: hidden;
     aspect-ratio: 16/9;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    width: 100%;
+    width: 95%; /* Уменьшаем ширину видео-элемента */
     height: 0;
-    padding-bottom: 56.25%; /* Соотношение сторон 16:9 (9/16 = 0.5625 или 56.25%) */
+    margin: 0 auto; /* Центрируем видео в ячейке */
+    padding-bottom: 53.4375%; /* Соотношение сторон 16:9 с учетом уменьшенной ширины (95% от 56.25%) */
+    transition: all 0.2s ease;
+    max-height: 90%; /* Ограничиваем максимальную высоту */
+}
+
+/* Стили для отключенной камеры */
+.camera-disabled {
+    position: relative;
+}
+
+.camera-disabled::before {
+    content: '🚫';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    color: rgba(255, 255, 255, 0.7);
+    z-index: 10;
+}
+
+.camera-disabled video {
+    opacity: 0.3;
+    filter: grayscale(100%);
+}
+
+/* Стиль для кнопки включения/выключения камеры */
+.toggle-camera {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; /* Всегда отображать кнопку */
+    justify-content: center;
+    align-items: center;
+    z-index: 20; /* Увеличиваем z-index для большей видимости */
+    opacity: 0.85; /* Увеличиваем непрозрачность */
+    transition: opacity 0.3s ease, background-color 0.3s ease;
+}
+
+.toggle-camera:hover {
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.toggle-camera.camera-disabled {
+    background-color: rgba(255, 0, 0, 0.6); /* Увеличиваем непрозрачность для выключенного состояния */
 }
 
 .video-item video {
@@ -112,7 +188,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover; /* Изменено с contain на cover, чтобы видео заполняло весь блок */
     transform-origin: center;
     transition: transform 0.2s ease;
 }
@@ -122,42 +198,26 @@ body {
     cursor: move;
 }
 
-/* Стили для изменяемого размера видео */
-.video-controls {
-    position: absolute;
-    bottom: 40px;
-    right: 10px;
-    display: flex;
-    background-color: rgba(0, 0, 0, 0.5);
-    border-radius: 4px;
-    padding: 5px;
-    z-index: 30;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+/* Стили для drag-n-drop функционала */
+.video-item.drag-over {
+    box-shadow: 0 0 15px #8a2be2;
+    transform: scale(1.02);
 }
 
-.video-item:hover .video-controls {
-    opacity: 1;
+.video-item.dragging {
+    opacity: 0.7;
+    z-index: 1000;
 }
 
-.video-control-btn {
-    width: 24px;
-    height: 24px;
-    background-color: transparent;
-    color: white;
-    border: none;
-    cursor: pointer;
-    margin: 0 2px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    border-radius: 3px;
+.video-item.can-drag {
+    cursor: grab;
 }
 
-.video-control-btn:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+.video-item.can-drag:active {
+    cursor: grabbing;
 }
+
+/* Стили для элементов управления видео удалены */
 
 .video-label {
     position: absolute;
@@ -283,12 +343,112 @@ body {
 }
 
 /* Показываем кнопку только при наведении на видео-элемент */
-.video-item:hover .kill-button {
+.video-item:hover .kill-button,
+.video-item:hover .hand-emoji-button {
     display: flex;
 }
 
 .kill-button:hover {
     background-color: rgba(255, 0, 0, 0.2);
+}
+
+/* Кнопка эмодзи ладони */
+.hand-emoji-button {
+    position: absolute;
+    bottom: 10px;
+    right: 10px; /* Изменено с left на right */
+    background-color: rgba(20, 20, 20, 0.7);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    cursor: pointer;
+    opacity: 0.3;
+    transition: opacity 0.2s ease-in-out;
+    z-index: 10;
+}
+
+/* Для убитых игроков кнопка не кликабельна */
+.is-killed .hand-emoji-button {
+    cursor: not-allowed;
+    opacity: 0.2;
+    pointer-events: none;
+}
+
+.video-item:hover .hand-emoji-button,
+.hand-emoji-button:hover {
+    opacity: 1;
+}
+
+/* Анимация центрирования видео */
+@keyframes center-attention-animation {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(138, 43, 226, 0);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(138, 43, 226, 0.8);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(138, 43, 226, 0);
+    }
+}
+
+.center-attention {
+    z-index: 100;
+    animation: center-attention-animation 1s ease-in-out;
+    position: relative;
+}
+
+/* Большой эмодзи руки в центре видео */
+.center-attention::before {
+    content: "👋";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 80px;
+    z-index: 150;
+    opacity: 0;
+    animation: hand-emoji-appear 1s ease-in-out;
+}
+
+@keyframes hand-emoji-appear {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+    }
+    20% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+    80% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8);
+    }
+}
+
+/* Удаляем дублирующие стили для кнопки с эмодзи ладони */
+
+/* Анимация для центрирования видео после нажатия на эмодзи ладони */
+@keyframes centerVideo {
+    0% { transform: scale(1); z-index: 1; }
+    10% { transform: scale(1.05); z-index: 100; }
+    90% { transform: scale(1.05); z-index: 100; }
+    100% { transform: scale(1); z-index: 1; }
+}
+
+.video-item.center-attention {
+    animation: centerVideo 1s ease-in-out forwards;
+    z-index: 100;
+    box-shadow: 0 0 20px rgba(138, 43, 226, 0.7);
 }
 
 /* Context menu styling */
@@ -397,17 +557,18 @@ body {
 }
 
 .sidebar-toggle-btn {
-    position: fixed;
-    top: 20px;
-    left: 20px;
+    position: absolute;
+    top: 5px; /* Размещаем кнопку в 5px от верхнего края */
+    left: 10px;
     z-index: 1040;
     border-radius: 50%;
-    width: 50px;
-    height: 50px;
+    width: 35px; /* Уменьшаем размер кнопки */
+    height: 35px; /* Уменьшаем размер кнопки */
     display: none; /* По умолчанию скрыта */
     align-items: center;
     justify-content: center;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    font-size: 14px; /* Уменьшаем размер шрифта иконки */
 }
 
 .sidebar-section {

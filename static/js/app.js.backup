@@ -1,14 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Сразу скрываем сайдбар и кнопку сайдбара при загрузке страницы
-    const sidebarToggle = document.getElementById('sidebar-toggle');
-    if (sidebarToggle) {
-        sidebarToggle.style.display = 'none';
-    }
-    
-    const controlSidebarElement = document.getElementById('control-sidebar');
-    if (controlSidebarElement) {
-        controlSidebarElement.style.display = 'none';
-    }
     // Инициализация логов фронтенда
     window.appLogs = [];
     
@@ -178,8 +168,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Feather icons
     feather.replace();
     
-    // НЕ инициализируем определение наведения мыши для сайдбара здесь
-    // Это будет сделано только после входа в конференцию
+    // Инициализируем определение наведения мыши для сайдбара
+    setupSidebarHoverDetection();
     
     // DOM elements
     const joinAsPlayerBtn = document.getElementById('join-as-player-btn');
@@ -273,41 +263,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.autoAdjustBitrate = true;  // По умолчанию автоматически подстраивать битрейт
     window.recommendedBitrate = 300;  // Начальное значение рекомендуемого битрейта
     
-    // Переменные для сохранения пользовательских настроек видео
-    window.manuallySelectedQuality = null; // Качество, выбранное пользователем
-    window.videoConstraintsApplied = false; // Статус применения ограничений видео
-    
-    // Загружаем сохраненные настройки из localStorage при загрузке страницы
-    try {
-        // Загружаем выбранное качество видео
-        const savedQuality = localStorage.getItem('userSelectedVideoQuality');
-        if (savedQuality) {
-            window.manuallySelectedQuality = savedQuality;
-            console.log(`ЗАГРУЖЕНО ИЗ ХРАНИЛИЩА: Выбранное пользователем качество видео = ${savedQuality}`);
-        } else {
-            // Устанавливаем качество по умолчанию как sd (480p), если ничего не сохранено
-            window.manuallySelectedQuality = 'sd';
-            localStorage.setItem('userSelectedVideoQuality', 'sd');
-            console.log(`НЕТ СОХРАНЕННОГО КАЧЕСТВА: Установлено качество по умолчанию - sd (480p)`);
-        }
-        
-        // Загружаем ID выбранной камеры
-        const savedCameraId = localStorage.getItem('selectedCameraId');
-        if (savedCameraId) {
-            selectedCameraId = savedCameraId;
-            console.log(`ЗАГРУЖЕНО ИЗ ХРАНИЛИЩА: ID выбранной камеры = ${savedCameraId}`);
-        }
-        
-        // Загружаем сохраненные настройки видео (ширина, высота, битрейт)
-        const savedVideoSettings = localStorage.getItem('videoSettings');
-        if (savedVideoSettings) {
-            window.selectedVideoSettings = JSON.parse(savedVideoSettings);
-            console.log(`ЗАГРУЖЕНО ИЗ ХРАНИЛИЩА: Настройки видео =`, window.selectedVideoSettings);
-        }
-    } catch (e) {
-        console.error("Ошибка при загрузке настроек из localStorage:", e);
-    }
-    
     
     // Локальные переименования других пиров (видны только пользователю)
     const localPeerNames = new Map();
@@ -324,43 +279,14 @@ document.addEventListener('DOMContentLoaded', () => {
         fullhd: { width: 1920, height: 1080, bitrate: 3000 } // 1080p
     };
     
-    // Словарь для маппинга между значениями селектора и идентификаторами качества
-    // Это нужно для правильного сохранения выбора пользователя
-    const qualityMappings = {
-        // Значения из селектора -> стандартизированные ключи для videoQualityPresets
-        "sd": "sd",           // 480p
-        "hd": "hd",           // 720p
-        "fullhd": "fullhd",   // 1080p
-        // Хотя селектор использует те же значения, добавим для явности
-        "480p": "sd",
-        "720p": "hd",
-        "1080p": "fullhd"
-    };
-    
     // Проверка поддержки запрошенного разрешения, с постепенным fallback на более низкое
     async function getValidVideoConstraints(requestedWidth, requestedHeight) {
-        console.log(`Applying exact resolution constraints ${requestedWidth}x${requestedHeight}`);
-        window.appLogs.push({
-            timestamp: new Date().toISOString(),
-            message: `Applying exact resolution constraints ${requestedWidth}x${requestedHeight}`
-        });
-        
-        // Пробуем с точными (exact) ограничениями для максимальной точности
+        // Пробуем сначала с точными разрешениями
         let exactConstraints = {
             width: { exact: requestedWidth },
             height: { exact: requestedHeight },
             facingMode: 'user'
         };
-        
-        // Добавляем выбор камеры, если она указана
-        if (selectedCameraId) {
-            exactConstraints.deviceId = { exact: selectedCameraId };
-            console.log("Using exact deviceId constraint for maximum precision");
-            window.appLogs.push({
-                timestamp: new Date().toISOString(),
-                message: `Using exact deviceId constraint for camera ${selectedCameraId}`
-            });
-        }
         
         try {
             console.log('Testing with exact constraints:', JSON.stringify(exactConstraints));
@@ -504,17 +430,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (localVideoQualitySelect) {
         localVideoQualitySelect.addEventListener('change', () => {
             const selectedQuality = localVideoQualitySelect.value;
-            console.log(`Выбрано качество в селекторе: ${selectedQuality}`);
-            
-            // ВАЖНОЕ ИЗМЕНЕНИЕ: Сохраняем выбранное пользователем качество
-            // в глобальной переменной для оперативного использования и в localStorage для долгосрочного хранения
-            // Стандартизируем значение для сохранения 
-            const standardizedQuality = qualityMappings[selectedQuality] || selectedQuality;
-            
-            window.manuallySelectedQuality = standardizedQuality;
-            localStorage.setItem('userSelectedVideoQuality', standardizedQuality);
-            console.log(`ВАЖНО: Сохраняем выбор пользователя: ${selectedQuality} (стандартизировано как ${standardizedQuality}) в глобальную переменную и localStorage`);
-            
             if (localCustomVideoSettings) {
                 localCustomVideoSettings.style.display = selectedQuality === 'custom' ? 'block' : 'none';
             }
@@ -523,14 +438,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Установить значения из пресета
                 const preset = videoQualityPresets[selectedQuality];
                 if (preset) {
-                    if (localVideoWidthInput) {
-                        localVideoWidthInput.value = preset.width;
-                        console.log(`Установлена ширина: ${preset.width} в соответствии с качеством ${selectedQuality}`);
-                    }
-                    if (localVideoHeightInput) {
-                        localVideoHeightInput.value = preset.height;
-                        console.log(`Установлена высота: ${preset.height} в соответствии с качеством ${selectedQuality}`);
-                    }
+                    if (localVideoWidthInput) localVideoWidthInput.value = preset.width;
+                    if (localVideoHeightInput) localVideoHeightInput.value = preset.height;
                     if (localVideoBitrateInput) localVideoBitrateInput.value = preset.bitrate;
                     if (localVideoBitrateSlider) localVideoBitrateSlider.value = preset.bitrate;
                     if (localBitrateValue) localBitrateValue.textContent = `${preset.bitrate} kbps`;
@@ -611,14 +520,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectedCameraId = cameraSelect.value;
                 console.log("Камера изменена, новый ID:", selectedCameraId);
                 
-                // Сохраняем выбранную камеру в localStorage
-                try {
-                    localStorage.setItem('selectedCameraId', selectedCameraId);
-                    console.log("Сохранен ID выбранной камеры в localStorage:", selectedCameraId);
-                } catch (e) {
-                    console.error("Ошибка при сохранении ID камеры в localStorage:", e);
-                }
-                
                 // Сбрасываем ранее выбранную опцию 1080p, если новая камера её не поддерживает
                 if (localVideoQualitySelect && localVideoQualitySelect.value === 'fullhd') {
                     // Проверяем, есть ли у нас уже информация о поддержке 1080p для этой камеры
@@ -661,212 +562,183 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Функция для применения настроек локального видео
-    // Создаем отдельную функцию, которую можно вызывать и из кнопки, и из кода
-    async function applyLocalVideoSettings(settings = null) {
-        try {
-            console.log("Применяем настройки видео", settings ? "из аргумента" : "из формы");
+    // Применить настройки локального видео
+    if (applyLocalVideoSettingsBtn) {
+        applyLocalVideoSettingsBtn.addEventListener('click', async () => {
+            // Получить настройки из формы
+            if (!localVideoQualitySelect) return;
             
-            // Если настройки не предоставлены, берем их из формы
-            if (!settings) {
-                if (!localVideoQualitySelect) return;
+            const selectedQuality = localVideoQualitySelect.value;
+            let bitrate = 0;
+            
+            // Сначала сохраняем выбранную камеру
+            let newCameraId = null;
+            if (cameraSelect && cameraSelect.value) {
+                newCameraId = cameraSelect.value;
+                console.log("Выбрана камера:", newCameraId);
+            }
+            
+            if (selectedQuality === 'custom') {
+                if (!localVideoWidthInput || !localVideoHeightInput || !localVideoBitrateInput) return;
                 
-                const selectedQuality = localVideoQualitySelect.value;
-                let bitrate = 0;
+                const width = parseInt(localVideoWidthInput.value, 10);
+                const height = parseInt(localVideoHeightInput.value, 10);
+                bitrate = parseInt(localVideoBitrateInput.value, 10);
                 
-                // Стандартизируем значение качества для сохранения
-                const standardizedQuality = qualityMappings[selectedQuality] || selectedQuality;
+                // Сохраняем пользовательские настройки
+                window.selectedVideoSettings = {
+                    width: width,
+                    height: height,
+                    bitrate: bitrate,
+                    quality: 'custom'
+                };
+            } else {
+                const preset = videoQualityPresets[selectedQuality];
                 
-                // Сохраняем выбранное пользователем качество в глобальной переменной
-                window.manuallySelectedQuality = standardizedQuality;
+                // Сохраняем выбранное предустановленное качество
+                window.selectedVideoSettings = {
+                    width: preset.width,
+                    height: preset.height,
+                    bitrate: preset.bitrate,
+                    quality: selectedQuality
+                };
                 
-                try {
-                    // Сохраняем выбор пользователя в localStorage
-                    localStorage.setItem('userSelectedVideoQuality', standardizedQuality);
-                    console.log(`СОХРАНЕНО В ЛОКАЛЬНОЕ ХРАНИЛИЩЕ: качество видео = ${standardizedQuality} (из выбранного ${selectedQuality})`);
-                } catch (e) {
-                    console.error("Не удалось сохранить настройки в localStorage:", e);
-                }
+                bitrate = preset.bitrate;
                 
-                // Сохраняем выбранную камеру
-                let newCameraId = null;
-                if (cameraSelect && cameraSelect.value) {
-                    newCameraId = cameraSelect.value;
-                    console.log("Выбрана камера:", newCameraId);
-                    
-                    // Сохраняем выбранную камеру в localStorage
-                    try {
-                        localStorage.setItem('selectedCameraId', newCameraId);
-                    } catch (e) {
-                        console.error("Не удалось сохранить ID камеры в localStorage:", e);
-                    }
-                }
-                
-                if (selectedQuality === 'custom') {
-                    if (!localVideoWidthInput || !localVideoHeightInput || !localVideoBitrateInput) return;
-                    
-                    const width = parseInt(localVideoWidthInput.value, 10);
-                    const height = parseInt(localVideoHeightInput.value, 10);
-                    bitrate = parseInt(localVideoBitrateInput.value, 10);
-                    
-                    // Настройки для применения
-                    settings = {
-                        width: width,
-                        height: height,
-                        bitrate: bitrate,
-                        quality: 'custom',
-                        deviceId: newCameraId || selectedCameraId
-                    };
-                } else {
-                    const preset = videoQualityPresets[selectedQuality];
-                    
-                    // Настройки для применения
-                    settings = {
-                        width: preset.width,
-                        height: preset.height,
-                        bitrate: preset.bitrate,
-                        quality: selectedQuality,
-                        deviceId: newCameraId || selectedCameraId
-                    };
-                    
-                    // Проверяем совместимость камеры с выбранным разрешением
-                    if (window.cameraCapabilities && settings.deviceId) {
-                        const capabilities = window.cameraCapabilities[settings.deviceId];
-                        if (capabilities && selectedQuality === 'fullhd' && !capabilities.supportsFullHD) {
-                            console.warn("Камера не поддерживает 1080p, переключаемся на 720p!");
-                            const preset720p = videoQualityPresets.hd;
-                            
-                            settings = {
-                                width: preset720p.width,
-                                height: preset720p.height, 
-                                bitrate: preset720p.bitrate,
-                                quality: 'hd',
-                                deviceId: settings.deviceId
-                            };
-                            
-                            // Обновляем значение в localStorage
-                            try {
-                                localStorage.setItem('userSelectedVideoQuality', 'sd');
-                                window.manuallySelectedQuality = 'sd';
-                            } catch (e) {
-                                console.error("Не удалось обновить настройки в localStorage:", e);
-                            }
-                        }
+                // Проверяем, поддерживает ли выбранная камера данное разрешение
+                if (window.cameraCapabilities && newCameraId) {
+                    const capabilities = window.cameraCapabilities[newCameraId];
+                    if (capabilities && selectedQuality === 'fullhd' && !capabilities.supportsFullHD) {
+                        console.warn("Камера не поддерживает 1080p, переключаемся на 720p!");
+                        const preset720p = videoQualityPresets.hd;
+                        window.selectedVideoSettings = {
+                            width: preset720p.width,
+                            height: preset720p.height,
+                            bitrate: preset720p.bitrate,
+                            quality: 'hd'
+                        };
+                        bitrate = preset720p.bitrate;
                     }
                 }
             }
             
-            // Сохраняем настройки видео для будущего использования
-            window.selectedVideoSettings = {
-                width: settings.width,
-                height: settings.height,
-                bitrate: settings.bitrate,
-                quality: settings.quality
-            };
-            
-            // Сохраняем также в localStorage
-            try {
-                localStorage.setItem('videoSettings', JSON.stringify(window.selectedVideoSettings));
-            } catch (e) {
-                console.error("Не удалось сохранить настройки видео в localStorage:", e);
-            }
-            
-            console.log("Применяем настройки видео:", window.selectedVideoSettings);
+            console.log("Сохранены настройки видео:", window.selectedVideoSettings);
             
             // Сохраняем битрейт для будущего использования
-            window.customBitrate = settings.bitrate;
+            window.customBitrate = bitrate;
             
             try {
-                // Остановить текущий стрим, если он существует
+                // Остановить текущий стрим
                 if (localStream) {
                     localStream.getTracks().forEach(track => track.stop());
                 }
                 
-                // Создаем новые видео настройки с выбранной камерой
-                // ВАЖНОЕ ИЗМЕНЕНИЕ: Принудительно устанавливаем 480p по умолчанию
-                // Игнорируем settings и используем значения из SD-пресета
-                const sdPreset = videoQualityPresets.sd;
-                console.log("ПРИНУДИТЕЛЬНО ПРИМЕНЯЕМ НАСТРОЙКИ SD (480p):", JSON.stringify(sdPreset));
-                
-                const videoConstraints = {
-                    width: { ideal: sdPreset.width },
-                    height: { ideal: sdPreset.height }
+                // Создаем точные видео настройки с выбранной камерой
+                const exactVideoConstraints = {
+                    width: { exact: window.selectedVideoSettings.width },
+                    height: { exact: window.selectedVideoSettings.height }
                 };
                 
-                if (settings.deviceId) {
-                    videoConstraints.deviceId = { exact: settings.deviceId };
-                    selectedCameraId = settings.deviceId;
+                if (newCameraId) {
+                    exactVideoConstraints.deviceId = { exact: newCameraId };
+                    selectedCameraId = newCameraId;
                     console.log("Применяем настройки к камере:", selectedCameraId);
+                } else if (selectedCameraId) {
+                    exactVideoConstraints.deviceId = { exact: selectedCameraId };
+                    console.log("Используем ранее сохраненную камеру:", selectedCameraId);
                 }
                 
-                console.log("Итоговые настройки видео:", JSON.stringify(videoConstraints));
+                console.log("Итоговые настройки видео:", JSON.stringify(exactVideoConstraints));
                 
                 // Сбросим флаг применения настроек видео
                 videoConstraintsApplied = false;
                 
-                // Запрашиваем новый видеопоток
-                const newStream = await navigator.mediaDevices.getUserMedia({
-                    video: videoConstraints,
-                    audio: false
-                });
-                
-                console.log("Настройки видео успешно применены!");
-                
-                // Заменить локальный стрим
-                localStream = newStream;
-                
-                // Отмечаем, что настройки видео были применены
-                videoConstraintsApplied = true;
-                
-                // Получаем и выводим в лог фактические настройки потока
-                const videoTrack = localStream.getVideoTracks()[0];
-                if (videoTrack) {
-                    const trackSettings = videoTrack.getSettings();
-                    console.log("Фактические настройки применённого видеопотока:", trackSettings);
-                }
-                
-                if (localVideo) {
-                    // Обновить видео элемент
-                    const videoElement = localVideo.querySelector('video');
-                    if (videoElement) {
-                        videoElement.srcObject = newStream;
+                try {
+                    // Сначала пробуем с exact constraints
+                    console.log("Пробуем применить точные настройки:", JSON.stringify(exactVideoConstraints));
+                    const newStream = await navigator.mediaDevices.getUserMedia({
+                        video: exactVideoConstraints,
+                        audio: false
+                    });
+                    
+                    console.log("Точные настройки успешно применены!");
+                    
+                    // Заменить локальный стрим
+                    localStream = newStream;
+                    
+                    // Отмечаем, что настройки видео были применены
+                    videoConstraintsApplied = true;
+                    
+                    if (localVideo) {
+                        // Обновить видео элемент
+                        const videoElement = localVideo.querySelector('video');
+                        if (videoElement) {
+                            videoElement.srcObject = newStream;
+                        }
+                    }
+                    
+                    // Обновить видео треки во всех peer connections
+                    updateVideoTracksInPeerConnections(bitrate);
+                    
+                    // Закрыть модальное окно
+                    if (localVideoSettingsModal) {
+                        localVideoSettingsModal.hide();
+                    }
+                } catch (exactError) {
+                    console.warn("Не удалось применить точные настройки:", exactError.message);
+                    
+                    // Если точные настройки не удалось применить, пробуем с ideal constraints
+                    const idealVideoConstraints = {
+                        width: { ideal: window.selectedVideoSettings.width },
+                        height: { ideal: window.selectedVideoSettings.height }
+                    };
+                    
+                    if (newCameraId) {
+                        idealVideoConstraints.deviceId = { ideal: newCameraId };
+                    } else if (selectedCameraId) {
+                        idealVideoConstraints.deviceId = { ideal: selectedCameraId };
+                    }
+                    
+                    console.log("Пробуем применить гибкие настройки:", JSON.stringify(idealVideoConstraints));
+                    
+                    try {
+                        const fallbackStream = await navigator.mediaDevices.getUserMedia({
+                            video: idealVideoConstraints,
+                            audio: false
+                        });
+                        
+                        console.log("Гибкие настройки успешно применены!");
+                        
+                        // Заменить локальный стрим
+                        localStream = fallbackStream;
+                        
+                        // Отмечаем, что настройки видео были применены (хотя и с гибкими параметрами)
+                        videoConstraintsApplied = true;
+                        
+                        if (localVideo) {
+                            // Обновить видео элемент
+                            const videoElement = localVideo.querySelector('video');
+                            if (videoElement) {
+                                videoElement.srcObject = fallbackStream;
+                            }
+                        }
+                        
+                        // Обновить видео треки во всех peer connections
+                        updateVideoTracksInPeerConnections(bitrate);
+                        
+                        // Закрыть модальное окно
+                        if (localVideoSettingsModal) {
+                            localVideoSettingsModal.hide();
+                        }
+                    } catch (fallbackError) {
+                        console.error("Не удалось применить даже гибкие настройки:", fallbackError.message);
+                        showError(`Не удалось применить настройки видео: ${fallbackError.message}`);
                     }
                 }
-                
-                // Обновить видео треки во всех peer connections
-                // Принудительно используем битрейт SD пресета
-                updateVideoTracksInPeerConnections(videoQualityPresets.sd.bitrate);
-                
-                // Закрыть модальное окно, если оно открыто
-                if (localVideoSettingsModal) {
-                    localVideoSettingsModal.hide();
-                }
-                
-                // Устанавливаем значение селектора качества видео, если оно существует
-                if (localVideoQualitySelect && settings.quality) {
-                    if (localVideoQualitySelect.value !== settings.quality) {
-                        localVideoQualitySelect.value = settings.quality;
-                        console.log(`Установлено качество в селекторе: ${settings.quality}`);
-                    }
-                }
-                
-                return true; // Успешное применение настроек
             } catch (error) {
-                console.error('Ошибка применения настроек видео:', error);
-                showError(`Не удалось применить настройки видео: ${error.message}`);
-                return false;
+                console.error('Error applying local video settings:', error);
+                showError(`Failed to apply video settings: ${error.message}`);
             }
-        } catch (error) {
-            console.error('Неожиданная ошибка в applyLocalVideoSettings:', error);
-            showError(`Произошла ошибка: ${error.message}`);
-            return false;
-        }
-    }
-    
-    // Привязываем функцию к кнопке применения настроек
-    if (applyLocalVideoSettingsBtn) {
-        applyLocalVideoSettingsBtn.addEventListener('click', () => {
-            applyLocalVideoSettings();
         });
     }
     
@@ -883,11 +755,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        // ПРИНУДИТЕЛЬНО УСТАНАВЛИВАЕМ SD КАЧЕСТВО В LOCAL STORAGE
-        window.manuallySelectedQuality = 'sd';
-        localStorage.setItem('userSelectedVideoQuality', 'sd');
-        console.log("ПРИНУДИТЕЛЬНО УСТАНОВЛЕНО КАЧЕСТВО SD (480P) В ХРАНИЛИЩЕ");
-        
         // Проверяем, были ли успешно применены видео ограничения
         const settings = videoTrack.getSettings();
         console.log("Current video track settings:", settings);
@@ -897,68 +764,6 @@ document.addEventListener('DOMContentLoaded', () => {
             timestamp: new Date().toISOString(),
             message: `Current video track settings: ${JSON.stringify(settings)}`
         });
-        
-        // Обновляем отображение текущего разрешения под селектором
-        const currentResolutionDisplay = document.getElementById('current-resolution-display');
-        const currentBitrateInfo = document.getElementById('current-bitrate-info');
-        
-        if (currentResolutionDisplay && settings.width && settings.height) {
-            // Преобразуем размеры в название разрешения (480p, 720p, 1080p)
-            let resolutionText = '';
-            if (settings.height <= 480) {
-                resolutionText = '480p';
-            } else if (settings.height <= 720) {
-                resolutionText = '720p';
-            } else {
-                resolutionText = '1080p';
-            }
-            currentResolutionDisplay.textContent = resolutionText;
-        }
-        
-        // Обновляем отображение текущего битрейта
-        if (currentBitrateInfo) {
-            currentBitrateInfo.textContent = `${bitrate} кбіт/с`;
-        }
-        
-        // КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Полностью отключаем автоматическое определение качества
-        // и сохраняем только отладочную информацию
-        if (localVideoQualitySelect && settings.width && settings.height) {
-            const currentQuality = localVideoQualitySelect.value;
-            console.log(`Текущее качество видео в селекторе: ${currentQuality}`);
-            console.log(`Фактическое разрешение видео: ${settings.width}x${settings.height}`);
-            
-            // НЕ МЕНЯЕМ автоматически выбранное качество, используем только то, что выбрал пользователь
-            // РАДИКАЛЬНОЕ ИЗМЕНЕНИЕ: Полностью отключаем всю логику автоматического
-            // определения качества видео и используем только пользовательский выбор
-            // Нет логики автоопределения - только пользовательские настройки
-            
-            // Проверяем, есть ли сохранённое пользовательское качество
-            if (window.manuallySelectedQuality) {
-                console.log(`Сохраненный пользовательский выбор качества: ${window.manuallySelectedQuality}`);
-                // Если текущее качество в селекторе отличается от сохраненного,
-                // восстанавливаем сохраненное пользователем качество
-                if (localVideoQualitySelect.value !== window.manuallySelectedQuality) {
-                    console.log(`Восстанавливаем пользовательский выбор качества в селекторе: ${window.manuallySelectedQuality}`);
-                    localVideoQualitySelect.value = window.manuallySelectedQuality;
-                }
-            } 
-            // Если нет в глобальной переменной, проверяем localStorage
-            else if (localStorage.getItem('userSelectedVideoQuality')) {
-                const savedQuality = localStorage.getItem('userSelectedVideoQuality');
-                console.log(`Загружаем сохраненное качество из localStorage: ${savedQuality}`);
-                
-                // Устанавливаем в глобальную переменную для текущей сессии
-                window.manuallySelectedQuality = savedQuality;
-                
-                // Установить сохраненное качество в селекторе
-                if (localVideoQualitySelect.value !== savedQuality) {
-                    localVideoQualitySelect.value = savedQuality;
-                    console.log(`Установлено сохраненное качество в селекторе: ${savedQuality}`);
-                }
-            }
-            // Если нет сохраненного пользовательского выбора, НЕ ДЕЛАЕМ автоопределение,
-            // оставляем текущее значение в селекторе
-        }
         
         // Проверяем соответствие ожидаемому разрешению
         if (!videoConstraintsApplied) {
@@ -1084,11 +889,6 @@ document.addEventListener('DOMContentLoaded', () => {
             videoEnabled = true;  // Всегда включаем видео
             userRole = 'player';  // Устанавливаем роль игрока
             
-            // Убедимся, что кнопка сайдбара скрыта
-            if (sidebarToggleBtn) {
-                sidebarToggleBtn.style.display = 'none';
-            }
-            
             await joinConference();
         });
     }
@@ -1100,11 +900,6 @@ document.addEventListener('DOMContentLoaded', () => {
             roomname = 'default'; // Всегда используем комнату default
             videoEnabled = true;  // Всегда включаем видео
             userRole = 'host';    // Устанавливаем роль ведущего
-            
-            // Убедимся, что кнопка сайдбара скрыта
-            if (sidebarToggleBtn) {
-                sidebarToggleBtn.style.display = 'none';
-            }
             
             await joinConference();
         });
@@ -1128,50 +923,21 @@ document.addEventListener('DOMContentLoaded', () => {
             loginSection.style.display = 'none';
         }
         
-        // Настраиваем определение наведения мыши для показа кнопки сайдбара
-        // только после присоединения к конференции
-        setupSidebarHoverDetection();
+        // Задаем настройки видео по умолчанию (SD 480p)
+        const preset = videoQualityPresets.sd;
         
-        // Показываем сайдбар и кнопку сайдбара
-        const controlSidebar = document.getElementById('control-sidebar');
-        if (controlSidebar) {
-            controlSidebar.style.display = 'block';
-        }
-        
-        const sidebarToggleBtn = document.getElementById('sidebar-toggle');
-        if (sidebarToggleBtn) {
-            sidebarToggleBtn.style.display = 'block';
-        }
-        
-        console.log("Инициализация видео в joinConference");
-        
-        // Задаем настройки видео в зависимости от сохраненных предпочтений пользователя
-        // Если пользователь уже выбирал качество, используем его
-        let preset = videoQualityPresets.sd; // По умолчанию SD 480p
-        
-        // Проверяем сохраненное в localStorage или глобальных переменных качество
-        const savedQuality = window.manuallySelectedQuality || localStorage.getItem('userSelectedVideoQuality');
-        if (savedQuality && videoQualityPresets[savedQuality]) {
-            preset = videoQualityPresets[savedQuality];
-            console.log(`ИСПОЛЬЗУЕМ СОХРАНЕННОЕ КАЧЕСТВО: ${savedQuality} с параметрами ${preset.width}x${preset.height}`);
-            
-            // Также обновляем глобальную переменную для будущего использования
-            window.manuallySelectedQuality = savedQuality;
-        }
-        
-        // Используем ideal вместо exact для лучшей совместимости с разными камерами
-        // При этом браузер будет стремиться к нашему разрешению, но сможет выбрать 
-        // ближайшее поддерживаемое, если точное не поддерживается
+        // Для некоторых браузеров exact может быть слишком строгим и вызывать ошибку
+        // Попробуем комбинацию min/max, чтобы заставить видео быть точно того разрешения, которое нам нужно
         let videoConstraints = {
-            width: { ideal: preset.width },  // Используем ideal для лучшей совместимости
-            height: { ideal: preset.height }, // Используем ideal для лучшей совместимости
+            width: { min: preset.width, max: preset.width },  // Заменяем exact на min/max для более надежных ограничений
+            height: { min: preset.height, max: preset.height }, // Заменяем exact на min/max для более надежных ограничений
             facingMode: 'user'
         };
         
-        console.log('Setting video constraints with exact parameters:', videoConstraints);
+        console.log('Setting video constraints with min/max instead of exact:', videoConstraints);
         window.appLogs.push({
             timestamp: new Date().toISOString(),
-            message: `Setting video constraints with exact resolution: ${JSON.stringify(videoConstraints)}`
+            message: `Setting video constraints with min/max resolution: ${JSON.stringify(videoConstraints)}`
         });
             
         // Сохраняем битрейт для будущего использования
@@ -1200,13 +966,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // Сначала запросим временный доступ к устройствам через getUserMedia,
             // чтобы получить доступ к названиям устройств, иначе будет доступен только device.kind
-            // Используем try/catch, чтобы обрабатывать возможную ошибку доступа к камере
-            try {
-                await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-            } catch (mediaError) {
-                console.warn('Failed to get camera access for enumeration, will continue with limited information:', mediaError.message);
-                // Продолжаем работу даже при ошибке доступа к камере
-            }
+            await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
             
             const devices = await navigator.mediaDevices.enumerateDevices();
             const videoDevices = devices.filter(device => device.kind === 'videoinput');
@@ -1215,12 +975,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Available cameras:', availableCameras);
             
             // После получения списка камер, проверим их возможности
-            try {
-                await updateVideoQualityOptions();
-            } catch (qualityError) {
-                console.warn('Error checking camera capabilities:', qualityError.message);
-                // Продолжаем работу даже при ошибке
-            }
+            await updateVideoQualityOptions();
             
             // Селектор камеры при логине удален
             
@@ -1253,7 +1008,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Если у нас был выбранный deviceId, попробуем его восстановить
                     if (currentValue && videoDevices.some(d => d.deviceId === currentValue)) {
                         cameraSelect.value = currentValue;
-                    } else if (videoDevices.length > 0) {
+                    } else {
                         // Иначе выберем первую камеру или текущую выбранную в логине
                         cameraSelect.value = selectedCameraId || videoDevices[0].deviceId;
                     }
@@ -1261,8 +1016,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Error enumerating devices:', error);
-            // Не позволяем ошибке перечисления устройств блокировать работу приложения
-            // Просто продолжаем без списка камер
         }
     }
     
@@ -1273,71 +1026,19 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             console.log('Setting up local video stream, video enabled:', videoEnabled);
             
-            // ПОЛНОСТЬЮ НОВЫЙ ПОДХОД: ВСЕГДА ИСПОЛЬЗУЕМ SD (480p) НАСТРОЙКИ
-            // ФИКСИРОВАННОЕ КАЧЕСТВО SD 480p
-            // ИГНОРИРУЕМ ВХОДНЫЕ ПАРАМЕТРЫ
-            
-            // Переопределяем все настройки на SD (480p)
-            const sdPreset = videoQualityPresets.sd;
-            videoConstraints = {
-                width: { exact: sdPreset.width },
-                height: { exact: sdPreset.height }
-            };
-            console.log('ПРИНУДИТЕЛЬНО ИСПОЛЬЗУЕМ SD (480p):', JSON.stringify(videoConstraints));
-            
-            // Устанавливаем SD как выбранное качество
-            localStorage.setItem('userSelectedVideoQuality', 'sd');
-            window.manuallySelectedQuality = 'sd';
-            
-            let selectedQuality = 'sd'; // Всегда SD 480p
-            
-            // Важно: всегда используем формат с exact для точного разрешения
+            // Логи для отслеживания размеров видео
             if (videoConstraints) {
                 console.log('Video constraints explicitly provided:', JSON.stringify(videoConstraints));
                 window.appLogs.push({
                     timestamp: new Date().toISOString(),
                     message: `Explicit video constraints provided: ${JSON.stringify(videoConstraints)}`
                 });
-                
-                // Проверяем наличие ограничений разрешения и преобразуем к ideal, если они есть в другом формате
-                // Это улучшит совместимость с различными камерами
-                if (videoConstraints.width && !videoConstraints.width.ideal && !videoConstraints.width.exact) {
-                    console.log('Converting width constraint to ideal format for better compatibility');
-                    const width = videoConstraints.width.min || videoConstraints.width.max || videoConstraints.width.exact || 640;
-                    videoConstraints.width = { ideal: width };
-                }
-                
-                if (videoConstraints.height && !videoConstraints.height.ideal && !videoConstraints.height.exact) {
-                    console.log('Converting height constraint to ideal format for better compatibility');
-                    const height = videoConstraints.height.min || videoConstraints.height.max || videoConstraints.height.exact || 480;
-                    videoConstraints.height = { ideal: height };
-                }
-                
-                // Преобразуем exact в ideal для лучшей совместимости
-                if (videoConstraints.width && videoConstraints.width.exact) {
-                    const exactWidth = videoConstraints.width.exact;
-                    videoConstraints.width = { ideal: exactWidth };
-                    console.log(`Converting exact width ${exactWidth} to ideal format for better compatibility`);
-                }
-                
-                if (videoConstraints.height && videoConstraints.height.exact) {
-                    const exactHeight = videoConstraints.height.exact;
-                    videoConstraints.height = { ideal: exactHeight };
-                    console.log(`Converting exact height ${exactHeight} to ideal format for better compatibility`);
-                }
             } else {
-                console.log('No explicit video constraints, using defaults with ideal parameters for better compatibility');
+                console.log('No explicit video constraints, using defaults');
                 window.appLogs.push({
                     timestamp: new Date().toISOString(),
-                    message: `No explicit video constraints, using defaults for 480p with ideal parameters`
+                    message: `No explicit video constraints, using defaults for 480p`
                 });
-                
-                // Если ограничения не указаны, создаем их с ideal вместо exact для лучшей совместимости
-                videoConstraints = {
-                    width: { ideal: 640 },
-                    height: { ideal: 480 },
-                    facingMode: 'user'
-                };
             }
             
             // Check browser support
@@ -1355,8 +1056,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Try to get camera with different fallback options
             let stream = null;
             let deviceConstraints = videoConstraints || {
-                width: { ideal: 640 },
-                height: { ideal: 480 },
+                width: { exact: 640 },
+                height: { exact: 480 },
                 facingMode: 'user'
             };
             
@@ -1370,9 +1071,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Добавим выбор устройства, если оно указано
             if (selectedCameraId) {
                 console.log("Используем сохраненную камеру в setupLocalStream:", selectedCameraId);
-                // Using exact for maximum precision in camera selection
-                deviceConstraints.deviceId = { exact: selectedCameraId };
-                console.log("Using exact deviceId constraint for maximum precision in setupLocalStream");
+                // Using ideal instead of exact to avoid OverconstrainedError
+                deviceConstraints.deviceId = { ideal: selectedCameraId };
             }
             
             const constraints = {
@@ -1405,15 +1105,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     if (constraints.video) {
                         if (constraints.video.width) {
-                            requestedWidth = constraints.video.width.ideal || 
-                                constraints.video.width.exact || 
-                                constraints.video.width.min;
+                            requestedWidth = constraints.video.width.exact || 
+                                constraints.video.width.min || 
+                                constraints.video.width.ideal;
                         }
                         
                         if (constraints.video.height) {
-                            requestedHeight = constraints.video.height.ideal || 
-                                constraints.video.height.exact || 
-                                constraints.video.height.min;
+                            requestedHeight = constraints.video.height.exact || 
+                                constraints.video.height.min || 
+                                constraints.video.height.ideal;
                         }
                     }
                     
@@ -1705,12 +1405,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const currentBitrateDisplay = document.getElementById('current-bitrate-display');
                 if (currentBitrateDisplay) {
                     currentBitrateDisplay.value = window.recommendedBitrate;
-                }
-                
-                // Обновляем отображение битрейта рядом с разрешением
-                const currentBitrateInfo = document.getElementById('current-bitrate-info');
-                if (currentBitrateInfo) {
-                    currentBitrateInfo.textContent = `${window.recommendedBitrate} кбіт/с`;
                 }
                 break;
                 
@@ -3979,12 +3673,12 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Добавим выбор устройства, если оно указано
             if (selectedCameraId) {
-                // Используем "exact" для deviceId для максимальной точности соответствия
-                videoConstraints.deviceId = { exact: selectedCameraId };
-                console.log('Using exact deviceId constraint for maximum precision');
+                // Используем "ideal" вместо "exact" для deviceId, чтобы избежать OverconstrainedError
+                videoConstraints.deviceId = { ideal: selectedCameraId };
+                console.log('Using ideal deviceId constraint instead of exact to prevent OverconstrainedError');
                 window.appLogs.push({
                     timestamp: new Date().toISOString(),
-                    message: 'Using exact deviceId constraint for maximum precision'
+                    message: 'Using ideal deviceId constraint instead of exact to prevent OverconstrainedError'
                 });
             }
             
@@ -4017,8 +3711,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Добавляем deviceId снова, т.к. getValidVideoConstraints возвращает новый объект
                 if (selectedCameraId) {
-                    videoConstraints.deviceId = { exact: selectedCameraId };
-                    console.log("Using exact deviceId constraint for maximum precision");
+                    videoConstraints.deviceId = { ideal: selectedCameraId };
                 }
             }
             
@@ -4053,28 +3746,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Обновить селектор камеры, установив текущую камеру
                 const videoTrack = newStream.getVideoTracks()[0];
-                if (videoTrack && videoTrack.getSettings) {
+                if (videoTrack && videoTrack.getSettings && cameraSelect) {
                     const settings = videoTrack.getSettings();
-                    
-                    // Обновляем селектор качества видео на основе полученного разрешения
-                    if (localVideoQualitySelect && settings.width && settings.height) {
-                        console.log(`Обновляем селектор качества видео по фактическому разрешению: ${settings.width}x${settings.height}`);
-                        
-                        // Определяем, какой пресет соответствует полученному разрешению
-                        let matchedQuality = 'sd'; // По умолчанию SD 480p
-                        if (settings.width >= 1920 && settings.height >= 1080) {
-                            matchedQuality = 'fullhd';
-                        } else if (settings.width >= 1280 && settings.height >= 720) {
-                            matchedQuality = 'hd';
-                        }
-                        
-                        // Обновляем селектор качества видео
-                        localVideoQualitySelect.value = matchedQuality;
-                        console.log(`Установлено качество видео в селекторе: ${matchedQuality} на основании разрешения ${settings.width}x${settings.height}`);
-                    }
-                    
-                    // Обновляем селектор камеры
-                    if (cameraSelect && settings.deviceId) {
+                    if (settings.deviceId) {
                         selectedCameraId = settings.deviceId;
                         console.log(`Updating camera select to match current camera: ${settings.deviceId}`);
                         // Если есть селектор камеры, обновляем выбранное значение
