@@ -2245,11 +2245,18 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Обновить отображение имени для удаленного пира
     function updatePeerLabel(peerId) {
+        console.log(`Обновление метки для участника ${peerId}`);
         const videoElement = document.getElementById(`remote-${peerId}`);
-        if (!videoElement) return;
+        if (!videoElement) {
+            console.log(`Не найден видео элемент для ${peerId}, отмена обновления метки`);
+            return;
+        }
         
         const label = videoElement.querySelector('.video-label');
-        if (!label) return;
+        if (!label) {
+            console.log(`Не найдена метка для видео ${peerId}, отмена обновления метки`);
+            return;
+        }
         
         // Если есть локальное имя, используем его, иначе используем имя из списка пиров
         const localName = localPeerNames.get(peerId);
@@ -2895,7 +2902,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Скрыть контекстное меню
     // Сортировка видео элементов и создание сетки из 12 слотов
     function sortVideoElements() {
-        console.log('Sorting video elements by order index');
+        console.log('Sorting video elements by slot index');
         
         // Сохраняем текущие видео элементы
         const currentVideoItems = Array.from(videoContainer.querySelectorAll('.video-item'));
@@ -2932,44 +2939,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const remoteVideos = currentVideoItems.filter(item => item !== localVideo);
         allVideos = [...allVideos, ...remoteVideos];
         
-        // Сортируем видео по orderIndex
-        allVideos.sort((a, b) => {
-            // Для локального видео используем userOrderIndex, для удаленных - peer.orderIndex
-            let isLocalA = a === localVideo;
-            let isLocalB = b === localVideo;
-            
-            // Получаем ID пиров для удаленных видео
-            const peerIdA = !isLocalA ? a.dataset.peerId : null;
-            const peerIdB = !isLocalB ? b.dataset.peerId : null;
-            
-            // Получаем объекты пиров для удаленных видео
-            const peerA = !isLocalA ? peers.get(peerIdA) : null;
-            const peerB = !isLocalB ? peers.get(peerIdB) : null;
-            
-            // Проверка на ведущего - они всегда в конце
-            // Для локального видео проверяем userRole
-            const isHostA = isLocalA ? userRole === 'host' : (peerA && (peerA.role === 'host' || peerA.isHost));
-            const isHostB = isLocalB ? userRole === 'host' : (peerB && (peerB.role === 'host' || peerB.isHost));
-            
-            // Ведущие всегда идут в конце
-            if (isHostA && !isHostB) {
-                // Обязательно возвращаем положительное число, чтобы ведущий был последним
-                return 9999; // A - ведущий, должен быть в конце
-            }
-            
-            if (isHostB && !isHostA) {
-                // Обязательно возвращаем отрицательное число, чтобы ведущий был последним
-                return -9999; // B - ведущий, должен быть в конце
-            }
-            
-            // Если оба ведущие или оба игроки - сортируем по порядковому номеру
-            const orderA = isLocalA ? userOrderIndex : (peerA ? peerA.orderIndex || 0 : 0);
-            const orderB = isLocalB ? userOrderIndex : (peerB ? peerB.orderIndex || 0 : 0);
-            
-            // Сортировка по возрастанию номера
-            return orderA - orderB;
-        });
-        
         // Размещаем видео элементы в слотах согласно их orderIndex
         allVideos.forEach(videoItem => {
             const isLocal = videoItem === localVideo;
@@ -2977,7 +2946,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const peer = !isLocal ? peers.get(peerId) : null;
             const isHost = isLocal ? userRole === 'host' : (peer && (peer.role === 'host' || peer.isHost));
             
-            // Определяем индекс слота для этого видео
             let slotIndex;
             
             // Ведущий всегда должен быть в 12 слоте, независимо от других настроек
@@ -2990,34 +2958,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     videoItem.dataset.slotIndex = "12";
                     console.log("Host forcing self to slot 12");
                 }
-            } else if (isLocal && localVideoSlotIndex !== undefined) {
-                slotIndex = localVideoSlotIndex;
-            } else if (!isLocal && videoItem.dataset.slotIndex) {
-                slotIndex = parseInt(videoItem.dataset.slotIndex, 10);
-                
-                // Для ведущего убедимся, что всегда в последнем слоте
-                // Перемещаем все существующие видео из последнего слота если они там есть
-                const lastSlot = document.querySelector(`.video-item[data-slot-index="12"]`);
-                if (lastSlot && lastSlot !== videoItem && !lastSlot.classList.contains('empty-slot')) {
-                    // Найдем любой свободный слот для перемещения текущего элемента из слота 12
-                    const freeSlot = document.querySelector('.empty-slot');
-                    if (freeSlot) {
-                        const freeSlotIndex = parseInt(freeSlot.dataset.slotIndex, 10);
-                        console.log(`Moving non-host video from slot 12 to free slot ${freeSlotIndex}`);
-                        lastSlot.dataset.slotIndex = freeSlotIndex.toString();
-                        // Если это элемент peer, обновить его slotIndex
-                        const otherPeerId = lastSlot.dataset.peerId;
-                        if (otherPeerId && peers.has(otherPeerId)) {
-                            peers.get(otherPeerId).slotIndex = freeSlotIndex;
-                        }
-                    }
-                }
             } else {
-                // Для обычных игроков используем их порядковый номер
-                slotIndex = isLocal ? userOrderIndex : (peer ? peer.orderIndex : 1);
+                // Для всех игроков, используем порядковый номер как номер слота
+                // Это гарантирует, что игроки всегда будут находиться в слотах, соответствующих их номерам
+                const orderIndex = isLocal ? userOrderIndex : (peer ? peer.orderIndex : 1);
+                slotIndex = orderIndex;
                 
-                // Убедимся, что индекс не выходит за пределы допустимого диапазона
-                slotIndex = Math.max(1, Math.min(11, slotIndex)); // Ведущий занимает слот 12
+                // Сохраняем назначенный слот
+                if (isLocal) {
+                    localVideoSlotIndex = slotIndex;
+                    videoItem.dataset.slotIndex = slotIndex.toString();
+                    console.log(`Локальный игрок установлен в слот ${slotIndex} согласно порядковому номеру ${orderIndex}`);
+                } else if (peer) {
+                    peer.slotIndex = slotIndex;
+                    videoItem.dataset.slotIndex = slotIndex.toString();
+                    console.log(`Игрок ${peerId} установлен в слот ${slotIndex} согласно порядковому номеру ${orderIndex}`);
+                }
             }
             
             console.log(`Placing video ${isLocal ? 'local' : peerId} in slot ${slotIndex}`);
@@ -3161,50 +3117,195 @@ document.addEventListener('DOMContentLoaded', () => {
         const isLocalDragged = draggedItem === localVideo;
         const peerIdDragged = !isLocalDragged ? draggedItem.dataset.peerId : null;
         
-        // Получаем индекс слота назначения
+        // Получаем индекс слота назначения и исходный индекс слота с проверкой на валидность
         let targetSlotIndex;
+        let sourceSlotIndex = parseInt(draggedItem.dataset.slotIndex, 10);
+        
+        // Проверка, что исходный слот - валидное число
+        if (isNaN(sourceSlotIndex) || sourceSlotIndex <= 0) {
+            // Если исходный слот невалидный, установим его на 1 по умолчанию
+            sourceSlotIndex = 1;
+            draggedItem.dataset.slotIndex = "1";
+            console.log("Fixed invalid source slot index, set to 1");
+        }
+        
+        // Для обмена порядковыми номерами
+        let targetPeerId = null;
         
         // Проверяем, куда перетаскиваем - на пустой слот или на другой элемент
         if (this.classList.contains('empty-slot')) {
             // Перетаскивание на пустой слот
             targetSlotIndex = parseInt(this.dataset.slotIndex, 10);
+            
+            // Проверка, что целевой слот - валидное число
+            if (isNaN(targetSlotIndex) || targetSlotIndex <= 0) {
+                console.log("Invalid target slot in empty slot, aborting drag");
+                return false;
+            }
+            
+            console.log(`Перемещение с ${sourceSlotIndex} в пустой слот ${targetSlotIndex}`);
+            
+            // Обновляем DOM немедленно для лучшего пользовательского опыта
+            if (isLocalDragged) {
+                // Обновляем локальный видео элемент
+                draggedItem.dataset.slotIndex = targetSlotIndex.toString();
+                localVideoSlotIndex = targetSlotIndex;
+            } else if (peerIdDragged) {
+                // Обновляем удаленный видео элемент
+                draggedItem.dataset.slotIndex = targetSlotIndex.toString();
+                
+                const peer = peers.get(peerIdDragged);
+                if (peer) {
+                    peer.slotIndex = targetSlotIndex;
+                }
+            }
+            
+            // Немедленно заменяем пустой слот на видео элемент
+            // Находим родительский элемент пустого слота
+            const parent = this.parentNode;
+            if (parent) {
+                // Проверяем, если перетаскиваемый элемент уже удален из DOM, не удаляем его снова
+                try {
+                    // Сначала вставляем перетаскиваемый элемент рядом с пустым слотом
+                    parent.insertBefore(draggedItem, this);
+                    // Затем удаляем пустой слот
+                    parent.removeChild(this);
+                    console.log(`Непосредственная замена пустого слота ${targetSlotIndex} на видео элемент`);
+                } catch (error) {
+                    console.warn('Ошибка DOM при замене пустого слота:', error);
+                }
+            }
+            
+            // Отправляем сообщение о новой позиции элемента всем участникам
+            sendMessage({
+                type: 'slot_position',
+                peerId: isLocalDragged ? serverId : peerIdDragged,
+                slotIndex: targetSlotIndex
+            });
+            
+            // Меняем порядковый номер на соответствующий номеру слота
+            if (isLocalDragged) {
+                // Для локального пользователя меняем orderIndex на номер слота
+                sendMessage({
+                    type: 'change_order_index',
+                    orderIndex: targetSlotIndex
+                });
+                
+                // Обновляем значение локально
+                userOrderIndex = targetSlotIndex;
+                updateLocalLabel();
+            } else if (peerIdDragged) {
+                // Для удаленного пользователя меняем orderIndex на номер слота
+                sendMessage({
+                    type: 'change_order_index',
+                    targetId: peerIdDragged,
+                    orderIndex: targetSlotIndex
+                });
+                
+                // Обновляем значение локально
+                const peer = peers.get(peerIdDragged);
+                if (peer) {
+                    peer.orderIndex = targetSlotIndex;
+                    // Немедленно обновляем метку участника с номером
+                    updatePeerLabel(peerIdDragged);
+                }
+            }
         } else if (draggedItem !== this) {
             // Перетаскивание на другой элемент (не на себя)
-            // Берем его слот как целевой
             targetSlotIndex = parseInt(this.dataset.slotIndex, 10);
+            targetPeerId = this.dataset.peerId;
+            
+            // Проверка, что целевой слот - валидное число
+            if (isNaN(targetSlotIndex) || targetSlotIndex <= 0) {
+                console.log("Invalid target slot in occupied slot, using source slot index");
+                targetSlotIndex = sourceSlotIndex; // В случае ошибки используем исходный слот
+                this.dataset.slotIndex = sourceSlotIndex.toString();
+            }
+            
+            console.log(`Обмен между слотами: ${sourceSlotIndex} и ${targetSlotIndex}`);
+            console.log(`Участники: ${isLocalDragged ? 'local' : peerIdDragged} и ${targetPeerId}`);
+
+            // Обновляем сначала атрибуты data-slot-index на перетаскиваемом элементе и целевом элементе
+            if (isLocalDragged) {
+                localVideo.dataset.slotIndex = targetSlotIndex.toString();
+                localVideoSlotIndex = targetSlotIndex;
+            } else if (peerIdDragged) {
+                draggedItem.dataset.slotIndex = targetSlotIndex.toString();
+                
+                const peer = peers.get(peerIdDragged);
+                if (peer) {
+                    peer.slotIndex = targetSlotIndex;
+                }
+            }
+            
+            // Затем обновляем целевой элемент
+            this.dataset.slotIndex = sourceSlotIndex.toString();
+            if (targetPeerId) {
+                const targetPeer = peers.get(targetPeerId);
+                if (targetPeer) {
+                    targetPeer.slotIndex = sourceSlotIndex;
+                }
+            }
+            
+            // Выполняем обмен позициями DOM элементов
+            // Убеждаемся, что оба элемента имеют одного родителя
+            const parent = this.parentNode;
+            if (parent && draggedItem.parentNode === parent) {
+                try {
+                    // Находим место перетаскиваемого элемента в DOM
+                    const draggedSibling = draggedItem.nextSibling;
+                    
+                    // Если перетаскиваемый элемент находится прямо перед целевым, нужна специальная логика
+                    if (draggedSibling === this) {
+                        // Перемещаем целевой элемент перед перетаскиваемым
+                        parent.insertBefore(this, draggedItem);
+                    } else {
+                        // Сохраняем, что находится после целевого элемента
+                        const targetSibling = this.nextSibling;
+                        
+                        // Перемещаем целевой элемент на место перетаскиваемого
+                        parent.insertBefore(this, draggedSibling);
+                        
+                        // Перемещаем перетаскиваемый элемент на место целевого
+                        parent.insertBefore(draggedItem, targetSibling);
+                    }
+                    console.log(`Непосредственное перемещение DOM элементов между слотами ${sourceSlotIndex} и ${targetSlotIndex}`);
+                } catch (error) {
+                    console.warn('Ошибка DOM при обмене элементами:', error);
+                }
+            }
+            
+            // Обмен порядковыми номерами
+            if (isLocalDragged) {
+                // Обмен между локальным пользователем и удаленным пиром
+                swapOrderIndices(null, targetPeerId);
+            } else {
+                // Обмен между двумя удаленными пирами
+                swapOrderIndices(peerIdDragged, targetPeerId);
+            }
+            
+            // Отправляем сообщения о позициях слотов после обмена
+            sendMessage({
+                type: 'slot_position',
+                peerId: isLocalDragged ? serverId : peerIdDragged,
+                slotIndex: targetSlotIndex
+            });
+            
+            sendMessage({
+                type: 'slot_position',
+                peerId: targetPeerId,
+                slotIndex: sourceSlotIndex
+            });
         } else {
             // Перетаскивание на себя - ничего не делаем
             return false;
-        }
-        
-        // Отправляем сообщение о новой позиции элемента всем участникам
-        sendMessage({
-            type: 'slot_position',
-            peerId: isLocalDragged ? serverId : peerIdDragged,
-            slotIndex: targetSlotIndex
-        });
-        
-        // Локально обновляем позицию (будет обновлено снова при получении broadcast от сервера)
-        if (isLocalDragged) {
-            localVideo.dataset.slotIndex = targetSlotIndex.toString();
-            localVideoSlotIndex = targetSlotIndex; // Обновляем переменную для отслеживания слота
-        } else if (peerIdDragged) {
-            const videoElement = document.getElementById(`remote-${peerIdDragged}`);
-            if (videoElement) {
-                videoElement.dataset.slotIndex = targetSlotIndex.toString();
-            }
-            // Также обновляем слот в объекте peer
-            const peer = peers.get(peerIdDragged);
-            if (peer) {
-                peer.slotIndex = targetSlotIndex;
-            }
         }
         
         // Ждем небольшую задержку перед пересортировкой, чтобы дать время обновиться DOM
         setTimeout(() => {
             // Пересортировываем видео элементы
             sortVideoElements();
-        }, 50);
+        }, 300);
         
         return false;
     }
@@ -3229,11 +3330,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const orderA = peerIdA ? (peers.get(peerIdA)?.orderIndex || 0) : userOrderIndex;
         const orderB = peerIdB ? (peers.get(peerIdB)?.orderIndex || 0) : userOrderIndex;
         
+        console.log(`Текущие порядковые номера: ${peerIdA || 'local'}=${orderA}, ${peerIdB || 'local'}=${orderB}`);
+        
         // Меняем номера местами
         if (peerIdA) {
             const peerA = peers.get(peerIdA);
             if (peerA) {
+                // Обновляем порядковый номер для Peer A
                 peerA.orderIndex = orderB;
+                console.log(`Установлен новый порядковый номер для ${peerIdA}: ${orderB}`);
+                
+                // Используем updatePeerLabel для обновления метки
+                updatePeerLabel(peerIdA);
+                console.log(`Вызвана updatePeerLabel для ${peerIdA} с новым номером ${orderB}`);
                 
                 // Отправляем изменение на сервер
                 sendMessage({
@@ -3242,12 +3351,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     orderIndex: orderB
                 });
                 
-                // Обновляем отображение
-                updatePeerLabel(peerIdA);
+                // Также обновляем позицию слота, чтобы она соответствовала новому порядковому номеру
+                setTimeout(() => {
+                    sendMessage({
+                        type: 'slot_position',
+                        peerId: peerIdA,
+                        slotIndex: orderB
+                    });
+                    console.log(`Обновлена позиция слота для ${peerIdA} на ${orderB}`);
+                }, 200);
             }
         } else {
             // Для локального пользователя
             userOrderIndex = orderB;
+            console.log(`Установлен новый порядковый номер для local: ${orderB}`);
+            
+            // Обновляем отображение порядкового номера
+            updateLocalLabel();
+            console.log(`Вызвана updateLocalLabel для локального игрока с новым номером ${orderB}`);
             
             // Отправляем изменение на сервер (свой порядковый номер)
             sendMessage({
@@ -3255,14 +3376,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 orderIndex: orderB
             });
             
-            // Обновляем отображение
-            updateLocalLabel();
+            // Также обновляем позицию слота
+            if (userRole === 'player') {
+                setTimeout(() => {
+                    // Обновляем позицию слота для себя
+                    sendMessage({
+                        type: 'slot_position',
+                        slotIndex: orderB
+                    });
+                    console.log(`Обновлена позиция слота для local на ${orderB}`);
+                }, 200);
+            }
         }
         
         if (peerIdB) {
             const peerB = peers.get(peerIdB);
             if (peerB) {
+                // Обновляем порядковый номер для Peer B
                 peerB.orderIndex = orderA;
+                console.log(`Установлен новый порядковый номер для ${peerIdB}: ${orderA}`);
+                
+                // Используем updatePeerLabel для обновления метки
+                updatePeerLabel(peerIdB);
+                console.log(`Вызвана updatePeerLabel для ${peerIdB} с новым номером ${orderA}`);
                 
                 // Отправляем изменение на сервер
                 sendMessage({
@@ -3271,12 +3407,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     orderIndex: orderA
                 });
                 
-                // Обновляем отображение
-                updatePeerLabel(peerIdB);
+                // Также обновляем позицию слота, чтобы она соответствовала новому порядковому номеру
+                setTimeout(() => {
+                    sendMessage({
+                        type: 'slot_position',
+                        peerId: peerIdB,
+                        slotIndex: orderA
+                    });
+                    console.log(`Обновлена позиция слота для ${peerIdB} на ${orderA}`);
+                }, 300);
             }
         } else {
             // Для локального пользователя
             userOrderIndex = orderA;
+            console.log(`Установлен новый порядковый номер для local: ${orderA}`);
+            
+            // Обновляем отображение порядкового номера
+            updateLocalLabel();
+            console.log(`Вызвана updateLocalLabel для локального игрока с новым номером ${orderA}`);
             
             // Отправляем изменение на сервер (свой порядковый номер)
             sendMessage({
@@ -3284,12 +3432,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 orderIndex: orderA
             });
             
-            // Обновляем отображение
-            updateLocalLabel();
+            // Также обновляем позицию слота
+            if (userRole === 'player') {
+                setTimeout(() => {
+                    // Обновляем позицию слота для себя
+                    sendMessage({
+                        type: 'slot_position',
+                        slotIndex: orderA
+                    });
+                    console.log(`Обновлена позиция слота для local на ${orderA}`);
+                }, 300);
+            }
         }
         
         // Пересортировываем элементы
-        sortVideoElements();
+        setTimeout(() => {
+            console.log(`Перестраиваем сортировку видео-элементов после обмена номерами`);
+            sortVideoElements();
+        }, 400);
     }
     
     // Контекстное меню отключено (функция сохранена для совместимости)
@@ -3814,67 +3974,148 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Обработчик для кнопки случайного присвоения номеров игрокам
+    // Обработчик для кнопки присвоения номеров игрокам в соответствии с их слотами
     if (randomizePlayerOrderBtn) {
         randomizePlayerOrderBtn.addEventListener('click', () => {
-            // Находим всех игроков (не ведущих)
-            const players = Array.from(peers.entries())
-                .filter(([_, peer]) => peer.role !== 'host' && !peer.isHost)
-                .map(([id, peer]) => ({ id, peer }));
+            console.log('Started slot-based order index assignment');
             
-            // Если нет игроков, ничего не делаем
-            if (players.length === 0) {
-                console.log('No players to randomize order numbers');
+            // Находим все элементы видео для определения слотов
+            const videoItems = Array.from(videoContainer.querySelectorAll('.video-item'));
+            const slotAssignments = new Map(); // peerId -> slotIndex
+            
+            // Создаем карту назначений слотов на основе текущих позиций видео элементов
+            videoItems.forEach(item => {
+                const peerId = item.dataset.peerId;
+                const isLocal = item === localVideo;
+                const slotIndex = parseInt(item.dataset.slotIndex, 10);
+                
+                // Проверяем валидность слота
+                if (!isNaN(slotIndex) && slotIndex > 0) {
+                    if (isLocal) {
+                        // Для локального пользователя сохраняем особый ключ
+                        slotAssignments.set('local', slotIndex);
+                    } else if (peerId) {
+                        // Для удаленных пиров сохраняем по ID
+                        slotAssignments.set(peerId, slotIndex);
+                    }
+                    console.log(`Found valid slot assignment: ${isLocal ? 'local' : peerId} in slot ${slotIndex}`);
+                } else {
+                    console.log(`Invalid slot found for ${isLocal ? 'local' : peerId}, will be ignored`);
+                }
+            });
+            
+            // Собираем информацию о текущих занятых слотах
+            // Сначала получаем всех игроков (не ведущих)
+            const players = Array.from(peers.entries())
+                .filter(([_, peer]) => peer.role !== 'host' && !peer.isHost);
+
+            console.log(`Found ${players.length} players for randomization`);
+            
+            // Если у нас меньше 2 игроков, рандомизация не имеет смысла
+            if (players.length < 2) {
+                console.log('Not enough players for randomization (need at least 2)');
                 return;
             }
             
-            console.log(`Found ${players.length} players for randomizing order numbers`);
+            // Собираем текущие занятые слоты для каждого игрока
+            const currentPositions = players.map(([id, peer]) => ({
+                peerId: id,
+                slotIndex: peer.slotIndex || 0
+            })).filter(pos => pos.slotIndex > 0);
             
-            // Генерируем последовательные номера от 1 до N
-            const numbers = Array.from({ length: players.length }, (_, i) => i + 1);
+            console.log('Current player positions:', currentPositions);
             
-            // Присваиваем случайные номера каждому игроку и создаем массив промисов
-            const promises = players.map(({ id, peer }) => {
-                return new Promise((resolve) => {
-                    // Выбираем случайный номер из оставшихся и удаляем его из массива
-                    const randomIndex = Math.floor(Math.random() * numbers.length);
-                    const randomNumber = numbers.splice(randomIndex, 1)[0];
+            // Создаем массив слотов для перемешивания (используем только те слоты, которые уже заняты)
+            const takenSlots = currentPositions.map(pos => pos.slotIndex);
+            console.log('Currently taken slots:', takenSlots);
+            
+            // Перемешиваем только занятые слоты
+            const shuffledSlots = [...takenSlots];
+            for (let i = shuffledSlots.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledSlots[i], shuffledSlots[j]] = [shuffledSlots[j], shuffledSlots[i]];
+            }
+            
+            console.log('Shuffled slots:', shuffledSlots);
+            
+            // Создаем список новых назначений
+            const assignments = [];
+            
+            // Присваиваем каждому игроку новый перемешанный слот
+            players.forEach(([id, peer], index) => {
+                // Ищем текущую позицию игрока
+                const currentPosIndex = currentPositions.findIndex(pos => pos.peerId === id);
+                
+                // Если у этого игрока есть текущая позиция
+                if (currentPosIndex >= 0) {
+                    // Берем следующий перемешанный слот (учитывая индекс в массиве currentPositions)
+                    const newSlotIndex = shuffledSlots[currentPosIndex];
                     
-                    console.log(`Assigning random order index ${randomNumber} to player ${id}`);
-                    
-                    // Локально обновляем order index в объекте peer
-                    peer.orderIndex = randomNumber;
-                    
-                    // Также присваиваем случайные слоты
-                    const slotIndex = randomNumber; // Используем тот же порядковый номер как индекс слота
-                    peer.slotIndex = slotIndex;
-                    
-                    // Отправляем сообщение на сервер для изменения порядкового номера
-                    sendMessage({
-                        type: 'change_order_index',
-                        targetId: id,
-                        orderIndex: randomNumber
+                    assignments.push({
+                        peerId: id,
+                        oldSlotIndex: peer.slotIndex,
+                        newSlotIndex: newSlotIndex
                     });
                     
-                    // Также отправляем сообщение для обновления позиции слота
-                    setTimeout(() => {
-                        sendMessage({
-                            type: 'slot_position',
-                            peerId: id,
-                            slotIndex: slotIndex
-                        });
-                        resolve();
-                    }, 100);
-                });
+                    console.log(`Player ${id} will move from slot ${peer.slotIndex} to slot ${newSlotIndex}`);
+                }
             });
             
-            // Ждем выполнения всех промисов и затем сортируем элементы
-            Promise.all(promises).then(() => {
+            // Отправляем назначения последовательно с задержками
+            assignments.forEach((assignment, index) => {
                 setTimeout(() => {
-                    console.log('All random order indices assigned, sorting video elements');
-                    sortVideoElements();
-                }, 500);
+                    const { peerId, oldSlotIndex, newSlotIndex } = assignment;
+                    const peer = peers.get(peerId);
+                    
+                    if (peer) {
+                        console.log(`Moving player ${peerId} from slot ${oldSlotIndex} to slot ${newSlotIndex}`);
+                        
+                        // Обновляем слот и порядковый номер в объекте пира
+                        peer.slotIndex = newSlotIndex;
+                        peer.orderIndex = newSlotIndex;
+                        
+                        // Обновляем DOM элемент напрямую
+                        const videoElement = document.getElementById(`remote-${peerId}`);
+                        if (videoElement) {
+                            videoElement.dataset.slotIndex = newSlotIndex.toString();
+                            console.log(`Updated DOM element for player ${peerId} to slot ${newSlotIndex}`);
+                        }
+                        
+                        // Сначала обновляем порядковый номер (меняем значение отображаемого номера)
+                        sendMessage({
+                            type: 'change_order_index',
+                            targetId: peerId,
+                            orderIndex: newSlotIndex
+                        });
+                        
+                        // Затем с задержкой отправляем информацию о новой позиции слота (перемещаем видео)
+                        setTimeout(() => {
+                            sendMessage({
+                                type: 'slot_position',
+                                peerId: peerId,
+                                slotIndex: newSlotIndex
+                            });
+                            
+                            // Обновляем метку с именем участника
+                            updatePeerLabel(peerId);
+                        }, 200);
+                    }
+                }, index * 500); // Значительная задержка между операциями (500мс)
             });
+            
+            // Сортируем элементы после всех изменений с очень большой задержкой
+            // Используем задержку, учитывающую количество операций и время обмена
+            const totalDelayMs = assignments.length * 1000;
+            setTimeout(() => {
+                console.log('All slot-based order indices assigned, sorting video elements');
+                sortVideoElements();
+                
+                // Дополнительная защита - еще раз пересортируем через секунду
+                setTimeout(() => {
+                    console.log('Performing final sort after all operations');
+                    sortVideoElements();
+                }, 1000);
+            }, totalDelayMs);
         });
     }
     

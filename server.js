@@ -930,7 +930,6 @@ function broadcastToRoom(roomName, message, exceptClientId = null) {
 }
 
 // Обработка изменения порядкового номера игрока
-// Функция-заглушка для обратной совместимости (функционал удален)
 function handleChangeOrderIndex(clientId, message) {
     const client = clients.get(clientId);
     if (!client || !client.room) return;
@@ -939,10 +938,21 @@ function handleChangeOrderIndex(clientId, message) {
     const roomName = client.room;
     const targetId = message.targetId || clientId;
 
-    if (!message.orderIndex && message.orderIndex !== 0) {
+    // Проверяем наличие orderIndex и его валидность
+    if (message.orderIndex === undefined || message.orderIndex === null || isNaN(parseInt(message.orderIndex, 10))) {
         log(`Invalid order index in request from ${clientId}`, 'error');
         return;
     }
+    
+    // Преобразуем в число и проверяем, что оно положительное
+    const orderIndex = parseInt(message.orderIndex, 10);
+    if (orderIndex <= 0) {
+        log(`Order index must be positive: ${orderIndex}`, 'error');
+        return;
+    }
+    
+    // Обновляем message.orderIndex значением после преобразования
+    message.orderIndex = orderIndex;
 
     if (client.role !== 'host' && targetId !== clientId) {
         // Игрок пытается изменить порядковый номер другого игрока
@@ -952,8 +962,14 @@ function handleChangeOrderIndex(clientId, message) {
 
     // Обновляем порядковый номер
     if (clients.get(targetId)) {
+        // Обновляем порядковый номер
         clients.get(targetId).orderIndex = message.orderIndex;
         log(`Order index for client ${targetId} changed to ${message.orderIndex}`, 'info');
+        
+        // СРАЗУ обновляем и slotIndex в соответствии с новым orderIndex
+        // для обеспечения консистентности
+        clients.get(targetId).slotIndex = message.orderIndex;
+        log(`Also updated slot index for ${targetId} to match order index ${message.orderIndex}`, 'info');
         
         // Отправляем подтверждение изменителю
         sendToClient(client.ws, {
@@ -967,6 +983,13 @@ function handleChangeOrderIndex(clientId, message) {
             type: 'order_index_changed',
             id: targetId,
             orderIndex: message.orderIndex
+        }, clientId);
+        
+        // Также уведомляем всех о изменении позиции слота для немедленного эффекта
+        broadcastToRoom(roomName, {
+            type: 'slot_position_update',
+            peerId: targetId,
+            slotIndex: message.orderIndex
         }, clientId);
     } else {
         log(`Client ${targetId} not found for order index change`, 'warn');
@@ -1050,18 +1073,42 @@ function handleSlotPosition(clientId, message) {
     const peerId = message.peerId || clientId;
     const slotIndex = message.slotIndex;
     
-    if (typeof slotIndex !== 'number' || slotIndex < 0 || slotIndex > 11) {
-        console.log(`Invalid slot index: ${slotIndex}`);
+    // Проверка, что слот не null и является числом
+    if (slotIndex === null || slotIndex === undefined || isNaN(parseInt(slotIndex, 10))) {
+        log(`Invalid slot index: ${slotIndex}`, 'error');
         return;
     }
     
-    console.log(`Updating slot position for ${peerId} to ${slotIndex}`);
+    // Преобразуем в число и проверяем диапазон (от 1 до 11)
+    const slotIndexNum = parseInt(slotIndex, 10);
+    if (slotIndexNum <= 0 || slotIndexNum > 11) {
+        log(`Slot index out of range: ${slotIndexNum}`, 'error');
+        return;
+    }
+    
+    // Получаем клиент, которому меняем позицию
+    const targetClient = clients.get(peerId);
+    if (!targetClient) {
+        log(`Client ${peerId} not found for slot position update`, 'error');
+        return;
+    }
+    
+    // Используем порядковый номер (orderIndex) вместо slotIndex, если он есть
+    // Это позволяет игрокам всегда занимать слот соответствующий их номеру
+    const effectiveSlotIndex = targetClient.orderIndex || slotIndexNum;
+    log(`Using order index ${effectiveSlotIndex} for slot position of ${peerId}`, 'info');
+    
+    log(`Updating slot position for ${peerId} to ${effectiveSlotIndex}`, 'info');
+    
+    // Обновляем слот в соответствии с порядковым номером
+    targetClient.slotIndex = effectiveSlotIndex;
+    log(`Updated slot index for ${peerId} to ${effectiveSlotIndex}`, 'info');
     
     // Транслируем обновление позиции всем участникам комнаты
     broadcastToRoom(client.room, {
         type: 'slot_position_update',
         peerId: peerId,
-        slotIndex: slotIndex
+        slotIndex: effectiveSlotIndex
     });
 }
 
